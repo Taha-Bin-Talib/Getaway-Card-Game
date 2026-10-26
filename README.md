@@ -30,7 +30,7 @@ Health check URL: `/healthz`. (Note: Vercel/Netlify static/serverless hosting wi
   - *Elimination & transfer*: if they agree, they hand over every card and are out.
   - *Reveal only*: if they agree, you privately see their hand; it stays with them.
   - *Off*: no requests.
-  - Limits: not in the opening trick, only the next player (who hasn't played yet this trick), and not in the final duel.
+  - Limits: the next player must hold **fewer than 5 cards**; not in the opening trick, only the next player (who hasn't played yet this trick), and not in the final duel.
 - **Final duel (exactly two players left):** a player's *last card* decides things.
   - Last card **smaller** than the opponent's (loses the trick) → that player is safe and the game ends; the other is the Bhabhi.
   - Last card **bigger** (wins the trick) → they are not safe: they blindly pick one card from the opponent's hand and must play it (lead it). This repeats until someone's last card loses, or someone is emptied by a pick.

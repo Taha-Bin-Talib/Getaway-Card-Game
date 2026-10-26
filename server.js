@@ -11,6 +11,7 @@ const num = (v, d) => (v !== undefined && v !== '' && !isNaN(+v) ? +v : d);
 const SETTLE_MS = num(process.env.SETTLE_MS, 1800);        // how long a finished trick stays on the table
 const THULLA_MS = num(process.env.SETTLE_MS, 2600);        // ...and a Thulla (pick-up) trick
 const CONSENT_MS = num(process.env.CONSENT_MS, 15000);     // how long the asked player has to answer a hand request
+const REQUEST_MAX_CARDS = 5;                                // a hand can only be requested from a player holding FEWER than this many cards
 const BOT_MS = Math.max(1, num(process.env.BOT_MS, 4000)); // auto-play delay for disconnected players
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -278,6 +279,7 @@ function canRequest(room, p) {
   if (t.first || p.hand.length === 0 || nonOut(room).length <= 2) return null;   // not in the opening trick / final duel
   const target = byId(room, t.order[t.pos + 1]);                                   // next player, who hasn't played yet
   if (!target || target === p || target.hand.length === 0) return null;
+  if (target.hand.length >= REQUEST_MAX_CARDS) return null;                        // only players with fewer than 5 cards can be asked
   return target;
 }
 
