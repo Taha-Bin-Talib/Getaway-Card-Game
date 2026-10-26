@@ -8,7 +8,7 @@
 :root{--felt:#0d6b45;--felt2:#06402a;--gold:#f5c542;--ink:#101418;--red:#d32f2f;--panel:rgba(0,0,0,.35)}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt2) 75%) fixed;min-height:100dvh}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt2) 75%) fixed;min-height:100dvh;overflow-x:hidden}
 button{font:inherit;cursor:pointer}
 .screen{display:none;max-width:980px;margin:0 auto;padding:16px}
 .screen.on{display:block}
@@ -33,53 +33,95 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 .plist .grow{flex:1}
 .tag{font-size:.72rem;background:var(--gold);color:#222;border-radius:6px;padding:2px 6px;font-weight:700}
 .small{font-size:.85rem;opacity:.8}
-/* game */
-.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+
+/* ---------- cards ---------- */
+.card{--cw:64px;width:var(--cw);height:calc(var(--cw)*1.43);font-size:calc(var(--cw)*.27);background:#fff;color:var(--ink);border-radius:calc(var(--cw)*.12);position:relative;box-shadow:0 2px 6px rgba(0,0,0,.45);font-weight:700;user-select:none;flex:0 0 auto}
+.card.red{color:var(--red)}
+.card .tl,.card .br{position:absolute;line-height:1.05;text-align:center}
+.card .tl{top:.32em;left:.4em}
+.card .br{bottom:.32em;right:.4em;transform:rotate(180deg)}
+.card .mid{position:absolute;inset:0;display:grid;place-items:center;font-size:2.1em}
+.card.back{background:repeating-linear-gradient(45deg,#1e56a8 0 .45em,#173f7d .45em .9em);border:calc(var(--cw)*.07) solid #fff}
+.card.back>*{display:none}
+
+/* ---------- game screen ---------- */
+#game{max-width:760px;padding-top:10px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 .top .meta{opacity:.9;font-size:.9rem}
-#seats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
-.seat{min-width:104px;padding:8px 10px;border-radius:12px;background:var(--panel);border:2px solid transparent;text-align:center;position:relative}
-.seat.turn{border-color:var(--gold);box-shadow:0 0 14px rgba(245,197,66,.55)}
+#status{font-weight:700;min-height:1.6em;text-align:center;margin:8px 0 4px;font-size:1.02rem}
+#status.duel{color:var(--gold)}
+
+#stage{width:min(100%,640px,calc(100dvh - 330px));min-width:min(100%,310px);margin:0 auto;position:relative}
+#ring{position:relative;width:100%;aspect-ratio:1/1;--u:6px}
+#felt{position:absolute;left:12%;top:12%;width:76%;height:76%;border-radius:50%;
+  background:radial-gradient(circle at 50% 42%,#13915f 0%,#0b6a45 55%,#07492f 100%);
+  border:calc(var(--u)*1.6) solid #5a3a1f;
+  box-shadow:0 0 0 calc(var(--u)*.4) #8a5d33,inset 0 0 calc(var(--u)*6) rgba(0,0,0,.55),0 calc(var(--u)*1.6) calc(var(--u)*5) rgba(0,0,0,.55)}
+#orbit{position:absolute;left:calc(50% - var(--u)*30);top:calc(50% - var(--u)*30);width:calc(var(--u)*60);height:calc(var(--u)*60);border-radius:50%;border:2px dashed rgba(255,255,255,.2);animation:spin 70s linear infinite;pointer-events:none}
+#orbit i{position:absolute;left:50%;top:50%;width:0;height:0;font-style:normal}
+#orbit i::after{content:"›";position:absolute;left:calc(var(--u)*30 - .5em);top:-.62em;font-size:calc(var(--u)*5);color:rgba(255,255,255,.4);transform:rotate(90deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#arrow{position:absolute;left:50%;top:50%;width:0;height:0;transition:transform .7s cubic-bezier(.45,1.35,.55,1),opacity .3s;opacity:0;pointer-events:none}
+#arrow::after{content:"";position:absolute;left:calc(var(--u)*30);top:calc(var(--u)*-2.4);border-left:calc(var(--u)*4.6) solid var(--gold);border-top:calc(var(--u)*2.4) solid transparent;border-bottom:calc(var(--u)*2.4) solid transparent;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(245,197,66,.9))}
+#arrow.thulla::after{border-left-color:#ff5a5a;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(255,70,70,.9))}
+#pile{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+#pile .card{--cw:calc(var(--u)*7.4);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.72);opacity:.95}
+#pile .lbl{position:absolute;left:calc(var(--u)*-10);width:calc(var(--u)*20);top:calc(var(--u)*5.4);text-align:center;font-size:max(9px,calc(var(--u)*2.5));opacity:.75}
+#slots,#fx,#seats{position:absolute;inset:0;pointer-events:none}
+.slot{position:absolute;width:0;height:0}
+.slot .card{--cw:calc(var(--u)*10.5);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
+.slot.best .card{outline:calc(var(--u)*.7) solid var(--gold);box-shadow:0 0 calc(var(--u)*3) rgba(245,197,66,.8)}
+.slot.thulla .card{outline:calc(var(--u)*.7) solid #ff6b6b;box-shadow:0 0 calc(var(--u)*3) rgba(255,80,80,.8)}
+#fx .card,.fxcard{--cw:calc(var(--u)*10.5);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
+#fx .card.back{--cw:calc(var(--u)*5)}
+
+.seat{position:absolute;width:calc(var(--u)*22);transform:translate(-50%,-50%);text-align:center;transition:opacity .3s}
+.seat .fan{height:calc(var(--u)*6);display:flex;justify-content:center;align-items:flex-end;margin-bottom:calc(var(--u)*.4)}
+.seat .fan .card{--cw:calc(var(--u)*3.8);margin-left:calc(var(--u)*-1.9);box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.seat .fan .card:first-child{margin-left:0}
+.seat .pill{display:inline-block;max-width:100%;padding:calc(var(--u)*.7) calc(var(--u)*1.8);border-radius:calc(var(--u)*2.4);background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.18);backdrop-filter:blur(3px);position:relative}
+.seat .nm{font-weight:700;font-size:max(10px,calc(var(--u)*3.2));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(var(--u)*18)}
+.seat .ct{font-size:max(9px,calc(var(--u)*2.6));opacity:.85;line-height:1.15}
+.seat.you .pill{border-color:rgba(245,197,66,.55)}
+.seat.turn .pill{border-color:var(--gold);box-shadow:0 0 calc(var(--u)*3.5) rgba(245,197,66,.85);animation:pulse 1.2s ease-in-out infinite}
 .seat.out{opacity:.5}
-.seat .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
-.seat .ct{font-size:.85rem;opacity:.9}
-.seat .off{position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:#e04b4b}
-.seat .bdg{display:inline-block;font-size:.68rem;background:rgba(255,255,255,.2);border-radius:6px;padding:1px 6px;margin-left:4px}
-#table{background:rgba(0,0,0,.22);border:2px solid rgba(255,255,255,.12);border-radius:20px;min-height:200px;padding:12px;margin:8px 0;text-align:center}
-#status{font-weight:600;min-height:1.5em;margin-bottom:8px}
-#plays{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;min-height:100px}
-.play{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.78rem}
-.play.best .card{outline:3px solid var(--gold)}
-.play.thulla .card{outline:3px solid #ff6b6b}
-#actions{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0}
+.seat.out .fan{visibility:hidden}
+.seat .off{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#e04b4b;border:1px solid #fff}
+@keyframes pulse{50%{box-shadow:0 0 calc(var(--u)*1.5) rgba(245,197,66,.4)}}
+
+#actions{min-height:8px;margin:6px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.box{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 14px;text-align:center;max-width:100%}
+.box .msg{font-weight:700;margin-bottom:8px}
+.box .row{justify-content:center}
+.box .row>*{flex:0 1 auto}
+.bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin-top:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left;animation:shrink linear forwards}
+@keyframes shrink{to{transform:scaleX(0)}}
+.backs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:560px}
+.backs .card{--cw:46px;cursor:pointer;transition:transform .12s;padding:0}
+.backs .card:hover{transform:translateY(-8px) rotate(-3deg);outline:3px solid var(--gold)}
 #reveal{background:rgba(0,0,0,.35);border-radius:12px;padding:8px 10px;display:none;text-align:center}
 #reveal .cards{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px}
+#reveal .card{--cw:44px}
 #hand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 4px 18px}
-.card{width:64px;height:92px;background:#fff;color:var(--ink);border-radius:8px;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.45);font-weight:700;user-select:none;flex:0 0 auto;transition:transform .12s}
-.card.red{color:var(--red)}
-.card .tl,.card .br{position:absolute;font-size:15px;line-height:1.05;text-align:center}
-.card .tl{top:5px;left:6px}
-.card .br{bottom:5px;right:6px;transform:rotate(180deg)}
-.card .mid{position:absolute;inset:0;display:grid;place-items:center;font-size:34px}
-.card.sm{width:52px;height:76px}
-.card.sm .mid{font-size:26px}.card.sm .tl,.card.sm .br{font-size:12px}
+#hand .card{--cw:clamp(46px,12.5vw,66px);transition:transform .12s}
 #hand .card.legal{cursor:pointer;transform:translateY(-8px)}
 #hand .card.legal:hover{transform:translateY(-16px)}
 #hand .card.dim{opacity:.5;filter:grayscale(.5)}
-#log{max-height:170px;overflow:auto;font-size:.85rem;line-height:1.45;opacity:.9}
+
 #toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-120px);background:var(--gold);color:#222;font-weight:800;padding:12px 22px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.5);transition:transform .3s;z-index:50;max-width:92vw;text-align:center}
 #toast.show{transform:translate(-50%,0)}
 #toast.thulla{background:#ff5252;color:#fff}
+#toast.duel{background:#2a1a5e;color:#fff;border:2px solid var(--gold)}
 #over{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;place-items:center;z-index:40;padding:16px}
 #over.on{display:grid}
-#over .box{background:#0a3d29;border:2px solid var(--gold);border-radius:18px;padding:22px;max-width:420px;width:100%;text-align:center}
+#over .box2{background:#0a3d29;border:2px solid var(--gold);border-radius:18px;padding:22px;max-width:420px;width:100%;text-align:center}
 #over h2{margin:0 0 8px;font-size:1.7rem}
 #over ol{text-align:left;padding-left:26px;margin:10px 0 16px}
 #conn{position:fixed;bottom:0;left:0;right:0;background:#b71c1c;text-align:center;padding:6px;display:none;z-index:60;font-size:.9rem}
 @media(max-width:560px){
-  .card{width:50px;height:74px}.card .mid{font-size:26px}.card .tl,.card .br{font-size:12px}
-  .card.sm{width:44px;height:64px}
-  #hand{gap:3px}
   .code{font-size:2rem}
+  #hand{gap:3px}
 }
 </style>
 </head>
@@ -108,12 +150,13 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
     <details>
       <summary>How to play</summary>
       <ul>
-        <li>One 52-card deck is dealt randomly among all players. Aces are high. The holder of <b>A♠</b> opens the game.</li>
-        <li>Play clockwise. You must <b>follow the suit</b> that was led.</li>
+        <li>Everyone sits around a round table and the 52-card deck is dealt out. Aces are high. The holder of <b>A♠</b> opens the game.</li>
+        <li>Play goes <b>clockwise</b> around the table. You must <b>follow the suit</b> that was led.</li>
         <li>If you can't follow suit, play any card — that's a <b>Thulla</b>. The trick stops and the player with the <b>highest card of the led suit</b> picks up every card on the table and leads next.</li>
         <li>If everyone follows suit, the highest card wins the trick, the cards are discarded and the winner leads.</li>
         <li><b>First-round protection:</b> in the opening trick nobody can Thulla — players without spades simply pass and the cards are discarded.</li>
-        <li><b>Request rule:</b> on your turn (from trick 2) you can request the next player's whole hand. In <i>Elimination</i> mode they hand over every card and are out; in <i>Reveal</i> mode you just look at it.</li>
+        <li><b>Request rule:</b> only <i>after</i> you have played your card (from trick 2) you get a few seconds to request the next player's whole hand. In <i>Elimination</i> mode they hand over every card and are out; in <i>Reveal</i> mode you just look at it.</li>
+        <li><b>Final duel:</b> when only two players are left, if a player's <b>last card is smaller</b> than the other's they are safe and the game ends. If their <b>last card is bigger</b>, they must pick one of the other player's cards (blind), and play it. This repeats until one player gets rid of their cards.</li>
         <li>Get rid of all your cards to be safe. The last player holding cards is the <b>Bhabhi</b>.</li>
       </ul>
     </details>
@@ -136,7 +179,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
     <div class="small">Need 3–8 players. Cards are dealt randomly when the host starts.</div>
   </div>
   <div class="card-panel">
-    <h3 style="margin-top:0">Hand-request rule</h3>
+    <h3 style="margin-top:0">Hand-request rule (after your move)</h3>
     <select id="reqMode">
       <option value="elimination">Elimination &amp; transfer — requested player hands over all cards and is out</option>
       <option value="reveal">Reveal only — requester just sees the next player's hand</option>
@@ -154,23 +197,27 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 <!-- GAME -->
 <section id="game" class="screen">
   <div class="top">
-    <div class="meta">Room <b id="gCode"></b> · Trick <b id="gTrick"></b> · Discarded <b id="gDisc"></b></div>
+    <div class="meta">Room <b id="gCode"></b> · Trick <b id="gTrick"></b></div>
     <button class="btn ghost" id="leaveGame">Leave</button>
   </div>
-  <div id="seats"></div>
-  <div id="table">
-    <div id="status"></div>
-    <div id="plays"></div>
+  <div id="stage">
+    <div id="ring">
+      <div id="felt"></div>
+      <div id="orbit"><i style="transform:rotate(0deg)"></i><i style="transform:rotate(90deg)"></i><i style="transform:rotate(180deg)"></i><i style="transform:rotate(270deg)"></i></div>
+      <div id="pile"></div>
+      <div id="arrow"></div>
+      <div id="slots"></div>
+      <div id="seats"></div>
+      <div id="fx"></div>
+    </div>
   </div>
-  <div id="actions">
-    <button class="btn danger" id="reqBtn" style="display:none"></button>
-    <div id="reveal"></div>
-  </div>
+  <div id="status"></div>
+  <div id="actions"></div>
+  <div id="reveal"></div>
   <div id="hand"></div>
-  <div class="card-panel"><b>Game log</b><div id="log"></div></div>
 </section>
 
-<div id="over"><div class="box">
+<div id="over"><div class="box2">
   <h2 id="overTitle"></h2>
   <div class="small">Order of getting out</div>
   <ol id="overList"></ol>
@@ -185,7 +232,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 const $ = id => document.getElementById(id);
 const SYM = {S:'♠',H:'♥',D:'♦',C:'♣'}, RN = {11:'J',12:'Q',13:'K',14:'A'};
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let ws, S = null, session = null, queue = [], lastSeq = null, toastTimer;
+let ws, S = null, prevPhase = null, session = null, queue = [], lastSeq = null, toastTimer;
 try { session = JSON.parse(localStorage.getItem('thulla') || 'null'); } catch(e){}
 $('name').value = localStorage.getItem('thullaName') || '';
 const urlRoom = new URLSearchParams(location.search).get('room');
@@ -210,7 +257,7 @@ function connect(){
   ws.onclose = () => { $('conn').style.display = 'block'; setTimeout(connect, 1500); };
 }
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else queue.push(o); }
-function clearSession(){ session = null; S = null; lastSeq = null; localStorage.removeItem('thulla'); show('home'); }
+function clearSession(){ session = null; S = null; lastSeq = null; prevPhase = null; resetTable(); localStorage.removeItem('thulla'); show('home'); }
 function showErr(msg){
   ['homeErr','lobbyErr'].forEach(id => $(id).textContent = msg);
   toast(msg, '');
@@ -218,7 +265,7 @@ function showErr(msg){
 function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
 function toast(text, cls){
   const t = $('toast'); t.textContent = text; t.className = 'show ' + (cls||'');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', 2600);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', 2800);
 }
 
 /* ---------- home / lobby actions ---------- */
@@ -242,10 +289,11 @@ $('again').onclick = () => send({t:'rematch'});
 
 const MODE_TXT = {elimination:'Elimination & transfer', reveal:'Reveal only', off:'Off'};
 
-/* ---------- rendering ---------- */
+/* ---------- cards ---------- */
 function cardEl(id, cls){
-  const r = parseInt(id), s = id.slice(-1), l = RN[r] || r;
   const d = document.createElement('div');
+  if (id === 'back') { d.className = 'card back ' + (cls||''); return d; }
+  const r = parseInt(id), s = id.slice(-1), l = RN[r] || r;
   d.className = 'card ' + (s==='H'||s==='D' ? 'red ' : '') + (cls||'');
   d.innerHTML = `<span class="tl">${l}<br>${SYM[s]}</span><span class="mid">${SYM[s]}</span><span class="br">${l}<br>${SYM[s]}</span>`;
   d.dataset.id = id;
@@ -253,10 +301,195 @@ function cardEl(id, cls){
 }
 const nameOf = id => (S.players.find(p => p.id === id) || {}).name || '?';
 
+/* ---------- round-table geometry ----------
+   Seats are spread evenly round a circle, you at the bottom, play order running CLOCKWISE
+   (screen angles grow clockwise because y points down). Everything is in % of the ring's width. */
+const ring = $('ring');
+const RS = 41, RC = 21;                       // seat radius, radius where a played card lands
+let geo = {}, mySeat = 0, ringW = 600;
+const polar = (deg, r) => { const a = deg*Math.PI/180; return {x: 50 + r*Math.cos(a), y: 50 + r*Math.sin(a)}; };
+function fit(){
+  ringW = ring.clientWidth || 600;
+  ring.style.setProperty('--u', (ringW/100) + 'px');
+}
+window.addEventListener('resize', () => { if (S && S.phase !== 'lobby') { fit(); renderTable(); } });
+function computeGeo(){
+  const n = S.players.length;
+  mySeat = Math.max(0, S.players.findIndex(p => p.id === S.you.id));
+  geo = {};
+  S.players.forEach((p, i) => { geo[p.id] = { ang: 90 + (i - mySeat) * 360 / n, i }; });
+}
+const place = (el, pt) => { el.style.left = pt.x + '%'; el.style.top = pt.y + '%'; };
+const jitter = (str) => { let h = 0; for (const ch of str) h = (h*31 + ch.charCodeAt(0)) | 0; return ((h % 17) - 8); };
+const slotRot = (pid, card) => (geo[pid].ang - 90) * .3 + jitter(card);
+
+/* ---------- table rendering ---------- */
+const slotEls = new Map();         // card id -> .slot element currently on the table
+let arrowAng = null, sweepSeen = undefined, dealing = 0, overTimer = null;
+
+function resetTable(){
+  slotEls.forEach(el => el.remove()); slotEls.clear();
+  $('fx').innerHTML = ''; $('seats').innerHTML = ''; $('pile').innerHTML = '';
+  arrowAng = null; sweepSeen = undefined; actionsKey = '';
+  clearTimeout(overTimer);
+}
+
+function renderSeats(){
+  const seats = $('seats'); seats.innerHTML = '';
+  S.players.forEach(p => {
+    const g = geo[p.id], pt = polar(g.ang, RS), me = p.id === S.you.id;
+    const d = document.createElement('div');
+    const active = p.id === S.turn || (S.post && S.post.pid === p.id) || (S.pick && S.pick.pid === p.id);
+    d.className = 'seat' + (active ? ' turn' : '') + (p.out ? ' out' : '') + (me ? ' you' : '');
+    place(d, pt);
+    let fan = '';
+    if (!me && !p.out && p.count > 0) {
+      const k = Math.min(p.count, 6);
+      for (let j = 0; j < k; j++) fan += `<div class="card back" style="transform:rotate(${(j-(k-1)/2)*9}deg)"></div>`;
+    }
+    d.innerHTML = `<div class="fan">${fan}</div><div class="pill">${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}${me?' (you)':''}</div><div class="ct">${p.out?'OUT ✔ #'+p.place:p.count+(p.count===1?' card':' cards')}</div></div>`;
+    seats.appendChild(d);
+  });
+}
+
+function renderPile(){
+  const pile = $('pile'); pile.innerHTML = '';
+  const n = S.discarded;
+  if (n > 0) {
+    const layers = Math.min(3, 1 + Math.floor(n / 8));
+    for (let i = 0; i < layers; i++) {
+      const c = cardEl('back'); c.style.transform = `translate(${(i-1)*2}px,${-i*2}px) rotate(${(i-1)*7}deg)`; pile.appendChild(c);
+    }
+    pile.insertAdjacentHTML('beforeend', `<div class="lbl">${n} discarded</div>`);
+  }
+}
+
+function renderPlays(){
+  const keep = new Set();
+  let best = null;
+  S.plays.forEach(pl => { if (pl.card.slice(-1)===S.leadSuit && (!best || parseInt(pl.card)>parseInt(best.card))) best = pl; });
+  S.plays.forEach((pl, k) => {
+    keep.add(pl.card);
+    const off = pl.card.slice(-1) !== S.leadSuit;
+    let el = slotEls.get(pl.card);
+    const dest = polar(geo[pl.pid].ang, RC), rot = slotRot(pl.pid, pl.card);
+    if (!el) {                                             // a card has just been dealt onto the table
+      el = document.createElement('div'); el.className = 'slot';
+      el.appendChild(cardEl(pl.card));
+      place(el, dest); el.style.transform = `rotate(${rot}deg)`; el.style.zIndex = 10 + k;
+      $('slots').appendChild(el); slotEls.set(pl.card, el);
+      const from = polar(geo[pl.pid].ang, RS + 3);
+      const dx = (from.x - dest.x) * ringW / 100, dy = (from.y - dest.y) * ringW / 100;
+      if (el.animate) el.animate([
+        { transform: `translate(${dx}px,${dy}px) rotate(${rot - 140}deg) scale(.55)`, opacity: 0 },
+        { transform: `translate(${dx*.25}px,${dy*.25}px) rotate(${rot - 20}deg) scale(1.08)`, opacity: 1, offset: .7 },
+        { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 }
+      ], { duration: 520, delay: dealing ? 1500 : 0, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' });
+    }
+    el.classList.toggle('best', best === pl);
+    el.classList.toggle('thulla', off);
+  });
+  slotEls.forEach((el, id) => { if (!keep.has(id)) { el.remove(); slotEls.delete(id); } });
+}
+
+/* finished trick leaves the table: into the discard pile, or (Thulla) to whoever picks it up */
+function sweep(lt){
+  const toSeat = lt.toId && geo[lt.toId];
+  const target = toSeat ? polar(geo[lt.toId].ang, RS) : {x: 50, y: 50};
+  lt.plays.forEach((pl, k) => {
+    if (!geo[pl.pid]) return;
+    const from = polar(geo[pl.pid].ang, RC), rot = slotRot(pl.pid, pl.card);
+    const g = document.createElement('div'); g.className = 'slot'; g.appendChild(cardEl(pl.card));
+    place(g, from); g.style.transform = `rotate(${rot}deg)`;
+    $('fx').appendChild(g);
+    const dx = (target.x - from.x) * ringW / 100, dy = (target.y - from.y) * ringW / 100;
+    if (!g.animate) return g.remove();
+    const a = g.animate([
+      { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${dx}px,${dy}px) rotate(${rot + (toSeat?40:120)}deg) scale(${toSeat?.5:.5})`, opacity: toSeat ? .2 : 0 }
+    ], { duration: 650, delay: k * 55, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'both' });
+    a.onfinish = () => g.remove();
+  });
+}
+
+/* opening deal: cards spin out one at a time round the table */
+function dealAnim(){
+  const n = S.players.length, rounds = Math.min(5, Math.ceil(52 / n));
+  let k = 0;
+  dealing = 1; setTimeout(() => { dealing = 0; }, 2200);
+  for (let r = 0; r < rounds; r++) for (let i = 0; i < n; i++, k++) {
+    const p = S.players[i], to = polar(geo[p.id].ang, RS - 2);
+    const c = cardEl('back'); const w = document.createElement('div'); w.className = 'slot';
+    place(w, {x:50, y:50}); w.appendChild(c); $('fx').appendChild(w);
+    const dx = (to.x - 50) * ringW / 100, dy = (to.y - 50) * ringW / 100;
+    if (!w.animate) { w.remove(); continue; }
+    const a = w.animate([
+      { transform: 'translate(0,0) rotate(0deg) scale(.7)', opacity: 0 },
+      { opacity: 1, offset: .15 },
+      { transform: `translate(${dx}px,${dy}px) rotate(${360 + geo[p.id].ang}deg) scale(.8)`, opacity: .0 }
+    ], { duration: 520, delay: k * 32, easing: 'ease-in', fill: 'both' });
+    a.onfinish = () => w.remove();
+  }
+}
+
+/* the gold arrow glides round the table to whoever has to act */
+function pointer(){
+  const a = $('arrow');
+  const pid = S.turn || (S.post && S.post.pid) || (S.pick && S.pick.pid) || (S.settle && S.settle.bestPid) || null;
+  if (!pid || !geo[pid] || S.phase === 'over') { a.style.opacity = 0; return; }
+  const target = geo[pid].ang;
+  a.style.opacity = 1;
+  a.classList.toggle('thulla', !!(S.settle && S.settle.kind === 'thulla'));
+  if (arrowAng === null) arrowAng = target;
+  else {
+    let cw = (((target - arrowAng) % 360) + 360) % 360;      // clockwise distance
+    arrowAng += cw <= 200 ? cw : cw - 360;
+  }
+  a.style.transform = `rotate(${arrowAng}deg)`;
+}
+
+function renderTable(){
+  computeGeo();
+  renderSeats(); renderPlays(); renderPile(); pointer();
+}
+
+/* ---------- action area: request after your move / blind pick in the final duel ---------- */
+let actionsKey = '';
+function renderActions(){
+  const box = $('actions'), you = S.you;
+  let key = '';
+  if (S.phase === 'playing' && you.canRequest && S.post) key = 'post:' + S.trickNo + ':' + S.plays.length;
+  else if (S.phase === 'playing' && you.mustPick && S.pick) key = 'pick:' + S.trickNo;
+  if (key === actionsKey) return;
+  actionsKey = key; box.innerHTML = '';
+  if (key.startsWith('post')) {
+    const elim = S.settings.requestMode === 'elimination';
+    const d = document.createElement('div'); d.className = 'box';
+    d.innerHTML = `<div class="msg">✅ Move done. Request ${esc(you.requestTarget)}'s hand?</div>
+      <div class="row"><button class="btn danger" id="reqBtn">🃏 ${elim ? 'Take all of ' + esc(you.requestTarget) + "'s cards" : 'Peek at ' + esc(you.requestTarget) + "'s hand"}</button>
+      <button class="btn ghost" id="doneBtn">Done ▸</button></div>
+      <div class="bar"><i style="animation-duration:${Math.max(200, S.post.ms)}ms"></i></div>`;
+    box.appendChild(d);
+    $('reqBtn').onclick = () => send({t:'request'});
+    $('doneBtn').onclick = () => send({t:'endturn'});
+  } else if (key.startsWith('pick')) {
+    const from = nameOf(S.pick.fromId);
+    const d = document.createElement('div'); d.className = 'box';
+    d.innerHTML = `<div class="msg">⚔ Your last card won! Pick one of ${esc(from)}'s cards — you must play it.</div><div class="backs"></div>`;
+    for (let i = 0; i < S.pick.n; i++) {
+      const b = cardEl('back'); b.title = 'Pick this card'; b.onclick = () => send({t:'pick', i});
+      d.querySelector('.backs').appendChild(b);
+    }
+    box.appendChild(d);
+  }
+}
+
+/* ---------- screens ---------- */
 function render(){
   if (!S) return;
-  if (S.phase === 'lobby') { show('lobby'); renderLobby(); $('over').classList.remove('on'); }
+  if (S.phase === 'lobby') { show('lobby'); renderLobby(); $('over').classList.remove('on'); resetTable(); }
   else { show('game'); renderGame(); }
+  prevPhase = S.phase;
   handleEvent();
 }
 
@@ -283,69 +516,58 @@ function renderLobby(){
   $('start').textContent = S.players.length < 3 ? `Need ${3 - S.players.length} more player(s)` : 'Start game';
 }
 
-function renderGame(){
-  $('gCode').textContent = S.code; $('gTrick').textContent = S.trickNo; $('gDisc').textContent = S.discarded;
-  // seats
-  const seats = $('seats'); seats.innerHTML = '';
-  S.players.forEach(p => {
-    const d = document.createElement('div');
-    d.className = 'seat' + (p.id===S.turn?' turn':'') + (p.out?' out':'');
-    d.innerHTML = `${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}${p.id===S.you.id?' <span class="bdg">you</span>':''}</div><div class="ct">${p.out?'OUT ✔':p.count+' cards'}</div>`;
-    seats.appendChild(d);
-  });
-  // trick
-  const plays = $('plays'); plays.innerHTML = '';
-  let best = null;
-  S.plays.forEach(pl => { if (pl.card.slice(-1)===S.leadSuit && (!best || parseInt(pl.card)>parseInt(best.card))) best = pl; });
-  S.plays.forEach(pl => {
-    const w = document.createElement('div');
-    const off = pl.card.slice(-1) !== S.leadSuit;
-    w.className = 'play' + (best===pl?' best':'') + (off?' thulla':'');
-    w.appendChild(cardEl(pl.card,'sm'));
-    const n = document.createElement('div'); n.textContent = nameOf(pl.pid); w.appendChild(n);
-    plays.appendChild(w);
-  });
-  // status
+function statusText(){
   const you = S.you, myTurn = S.turn === you.id;
-  let st = '';
-  if (S.phase === 'over') st = 'Game over';
-  else if (myTurn) {
-    if (!S.plays.length) st = '🎯 Your turn — lead any card';
-    else if (you.hand.some(c => c.slice(-1)===S.leadSuit)) st = `🎯 Your turn — follow ${SYM[S.leadSuit]}`;
-    else st = `⚠️ No ${SYM[S.leadSuit]}! Any card you play is a THULLA`;
-  } else st = `Waiting for ${esc(nameOf(S.turn))}…` + (S.firstTrick ? ' (first round: no Thulla)' : '');
-  $('status').innerHTML = st;
-  // request button
-  const rb = $('reqBtn');
-  if (you.canRequest) {
-    rb.style.display = '';
-    rb.textContent = `🃏 Request ${you.requestTarget}'s hand`;
-    rb.onclick = () => {
-      const msg = S.settings.requestMode === 'elimination'
-        ? `Take ALL of ${you.requestTarget}'s cards? They will be out of the game, and you'll hold all their cards.`
-        : `Look at ${you.requestTarget}'s hand?`;
-      if (confirm(msg)) send({t:'request'});
-    };
-  } else rb.style.display = 'none';
-  // reveal
+  if (S.phase === 'over') return 'Game over';
+  if (S.settle) return S.settle.text;
+  if (S.stage === 'post') return you.canRequest ? '✅ Move done' : `Waiting for ${esc(nameOf(S.post.pid))}…`;
+  if (S.stage === 'pick') return you.mustPick ? `⚔ Pick a card from ${esc(nameOf(S.pick.fromId))}` : `⚔ ${esc(nameOf(S.pick.pid))} is picking a card from ${esc(nameOf(S.pick.fromId))}…`;
+  if (myTurn) {
+    if (!S.plays.length) return '🎯 Your turn — lead any card';
+    if (you.hand.some(c => c.slice(-1)===S.leadSuit)) return `🎯 Your turn — follow ${SYM[S.leadSuit]}`;
+    return `⚠️ No ${SYM[S.leadSuit]}! Any card you play is a THULLA`;
+  }
+  return `Waiting for ${esc(nameOf(S.turn))}…` + (S.firstTrick ? ' (first round: no Thulla)' : '');
+}
+
+function renderGame(){
+  $('gCode').textContent = S.code; $('gTrick').textContent = S.trickNo;
+  fit();
+  const starting = prevPhase !== 'playing' && S.phase === 'playing' && S.trickNo <= 1 && S.plays.length <= 1;
+  computeGeo();
+  // finished trick sweeps off the table (first state after joining/reloading is not animated)
+  const lt = S.lastTrick, ltId = lt ? lt.id : 0;
+  if (sweepSeen === undefined) sweepSeen = ltId;
+  let swept = false;
+  if (lt && ltId !== sweepSeen) { sweepSeen = ltId; sweep(lt); swept = true; }
+  if (starting) dealAnim();
+  renderTable();
+  const st = $('status');
+  st.innerHTML = (S.duel && S.phase !== 'over' ? '⚔ Final duel · ' : '') + statusText();
+  st.classList.toggle('duel', !!S.duel);
+  renderActions();
+  const you = S.you;
+  // reveal (peek mode)
   const rv = $('reveal');
   if (you.reveal) {
     rv.style.display = 'block';
-    rv.innerHTML = `<b>${esc(you.reveal.name)}'s hand</b> (only you can see this)<div class="cards"></div>`;
-    you.reveal.hand.forEach(c => rv.querySelector('.cards').appendChild(cardEl(c,'sm')));
+    rv.innerHTML = `<b>${esc(you.reveal.name)}'s hand</b> (only you can see this — as it was when you looked)<div class="cards"></div>`;
+    you.reveal.hand.forEach(c => rv.querySelector('.cards').appendChild(cardEl(c)));
   } else rv.style.display = 'none';
   // hand
   const hand = $('hand'); hand.innerHTML = '';
-  const legal = new Set(you.legal);
+  const legal = new Set(you.legal), myTurn = S.turn === you.id;
   you.hand.forEach(c => {
     const el = cardEl(c, myTurn ? (legal.has(c)?'legal':'dim') : '');
     if (legal.has(c)) el.onclick = () => send({t:'play', card:c});
     hand.appendChild(el);
   });
-  if (!you.hand.length && S.phase !== 'over') hand.innerHTML = '<div class="small">You are out — safe! Watch the others fight it out.</div>';
-  // log
-  const lg = $('log'); lg.innerHTML = S.log.slice().reverse().map(l => `<div>${esc(l)}</div>`).join('');
-  // game over
+  if (!you.hand.length && S.phase !== 'over' && S.stage !== 'pick') {
+    const me = S.players.find(p => p.id === you.id);
+    hand.innerHTML = '<div class="small">' + (me && me.out ? '✔ You are out — safe! Watch the others fight it out.' : 'Your last card is on the table — fingers crossed!') + '</div>';
+  }
+  // game over (let the last trick finish its sweep first)
+  clearTimeout(overTimer);
   if (S.phase === 'over') {
     const loser = S.players.find(p => p.id === S.loserId);
     $('overTitle').textContent = loser ? (loser.id===you.id ? '😅 You are the Bhabhi!' : `🎴 ${loser.name} is the Bhabhi!`) : 'Draw — no Bhabhi!';
@@ -355,7 +577,8 @@ function renderGame(){
     const host = S.hostId === you.id;
     $('again').style.display = host ? '' : 'none';
     $('againWait').textContent = host ? '' : 'Waiting for the host to start a new game…';
-    $('over').classList.add('on');
+    if (swept) overTimer = setTimeout(() => $('over').classList.add('on'), 1500);
+    else $('over').classList.add('on');
   } else $('over').classList.remove('on');
 }
 
@@ -364,7 +587,7 @@ function handleEvent(){
   if (lastSeq === null) { lastSeq = S.event.seq; return; }
   if (S.event.seq !== lastSeq) {
     lastSeq = S.event.seq;
-    if (S.event.type !== 'over') toast(S.event.text, S.event.type === 'thulla' ? 'thulla' : '');
+    if (S.event.type !== 'over') toast(S.event.text, S.event.type === 'thulla' ? 'thulla' : (S.event.type === 'duel' ? 'duel' : ''));
   }
 }
 
