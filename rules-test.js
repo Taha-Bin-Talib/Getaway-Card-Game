@@ -1,6 +1,5 @@
-// Deterministic rule tests (no server needed): post-move requests + the two-player final duel.
+// Deterministic rule tests (no server needed): hand requests with consent + the two-player final duel.
 process.env.SETTLE_MS = '0';           // resolve tricks instantly
-process.env.POST_MS = process.env.POST_MS || '0';
 const assert = require('assert');
 const T = require('./server');
 
@@ -17,7 +16,7 @@ const P = (room, n) => room.players.find(p => p.name === n);
 const lead = (room, n) => { T.newTrick(room, P(room, n), false); };
 const play = (room, n, c) => T.playCard(room, P(room, n), c);
 const total = room => room.players.reduce((a, p) => a + p.hand.length, 0) + room.discarded + (room.trick ? room.trick.plays.length : 0);
-let n = 0; const ok = (name, fn) => { fn(); n++; console.log('  ✓', name); };
+let n = 0; const pending = []; const ok = (name, fn) => { const v = fn(); n++; if (v && v.then) pending.push(v); console.log('  ✓', name); };
 
 console.log('Final duel');
 ok('last card SMALLER than the opponent’s -> game ends, that player is safe', () => {
@@ -105,8 +104,8 @@ ok('3 players: last card bigger -> just safe, no pick', () => {
   assert(P(r, 'A').out);
 });
 
-console.log('Hand request only after the move');
-process.env.POST_MS = '60000';
+console.log('Hand request: before your card, and the asked player decides');
+process.env.CONSENT_MS = '60000';
 delete require.cache[require.resolve('./server')];
 const T2 = require('./server');
 function table2(mode) {
@@ -118,58 +117,84 @@ function table2(mode) {
   T2.newTrick(r, r.players[0], false);
   return r;
 }
-ok('before playing: request is refused and button state is off', () => {
+ok('on your turn, BEFORE playing, you can request the next player (and only you)', () => {
   const r = table2('elimination');
-  assert(!T2.view(r, r.players[0]).you.canRequest);
-  assert(T2.doRequest(r, r.players[0]));            // returns an error string
-  assert.equal(r.players[1].hand.length, 3);
-});
-ok('after playing: window opens for the mover only; target hasn’t played yet', () => {
-  const r = table2('elimination');
-  T2.playCard(r, r.players[0], '9H');
-  assert.equal(r.stage, 'post');
-  assert.equal(r.turn, null);
   const v = T2.view(r, r.players[0]);
   assert(v.you.canRequest); assert.equal(v.you.requestTarget, 'B');
   assert(!T2.view(r, r.players[1]).you.canRequest);
-  assert(T2.doRequest(r, r.players[1]));            // someone else can't use it
+  assert(T2.doRequest(r, r.players[1]));              // not B's turn -> error string
 });
-ok('elimination request takes all cards, target is out, turn moves on', () => {
+ok('requesting does not move any card yet: the asked player is prompted', () => {
   const r = table2('elimination');
-  T2.playCard(r, r.players[0], '9H');
   assert.equal(T2.doRequest(r, r.players[0]), null);
-  assert.equal(r.players[0].hand.length, 2 + 3);
-  assert.equal(r.players[1].hand.length, 0);
-  assert(r.players[1].out);
-  assert.equal(r.stage, 'turn'); assert.equal(r.turn, r.players[2].id);
+  assert.equal(r.stage, 'consent');
+  assert.equal(r.players[1].hand.length, 3);
+  const vb = T2.view(r, r.players[1]), va = T2.view(r, r.players[0]);
+  assert(vb.you.mustAnswer); assert(!va.you.mustAnswer);
+  assert.equal(vb.consent.pid, r.players[0].id);
+  assert(T2.doRespond(r, r.players[0], true));         // only the asked player can answer
+  assert(T2.doRespond(r, r.players[2], true));
 });
-ok('"Done" (proceed) skips the request and passes the turn to the next player', () => {
+ok('asked player ACCEPTS: all cards move, they are out, requester still has to play', () => {
+  const r = table2('elimination');
+  T2.doRequest(r, r.players[0]);
+  assert.equal(T2.doRespond(r, r.players[1], true), null);
+  assert.equal(r.players[0].hand.length, 3 + 3);
+  assert.equal(r.players[1].hand.length, 0); assert(r.players[1].out);
+  assert.equal(r.stage, 'turn'); assert.equal(r.turn, r.players[0].id);
+  assert.equal(r.trick.plays.length, 0);               // nothing was dealt by the request
+  T2.playCard(r, r.players[0], '9H');
+  assert.equal(r.turn, r.players[2].id);               // B was skipped, C is next
+});
+ok('asked player REFUSES: nothing moves and the requester just plays', () => {
+  const r = table2('elimination');
+  T2.doRequest(r, r.players[0]);
+  assert.equal(T2.doRespond(r, r.players[1], false), null);
+  assert.equal(r.players[1].hand.length, 3); assert(!r.players[1].out);
+  assert.equal(r.stage, 'turn'); assert.equal(r.turn, r.players[0].id);
+});
+ok('only one request per turn', () => {
+  const r = table2('elimination');
+  T2.doRequest(r, r.players[0]); T2.doRespond(r, r.players[1], false);
+  assert(!T2.view(r, r.players[0]).you.canRequest);
+  assert(T2.doRequest(r, r.players[0]));
+});
+ok('cannot request after you have dealt your card', () => {
   const r = table2('elimination');
   T2.playCard(r, r.players[0], '9H');
-  T2.proceed(r);
-  assert.equal(r.stage, 'turn'); assert.equal(r.turn, r.players[1].id);
-  assert(T2.doRequest(r, r.players[0]));            // window is closed now
+  assert(T2.doRequest(r, r.players[0]));
+  assert(!T2.view(r, r.players[0]).you.canRequest);
 });
-ok('reveal mode peeks without moving cards', () => {
+ok('no answer in time counts as a refusal', () => {
+  process.env.CONSENT_MS = '40';
+  delete require.cache[require.resolve('./server')];
+  const T3 = require('./server');
+  const r = T3.makeRoom(); ['A', 'B', 'C'].forEach(x => T3.addPlayer(r, fakeWs(), x));
+  [['9H', '3D'], ['2H', '5S'], ['10H', '7C']].forEach((h, i) => { r.players[i].hand = h; });
+  r.phase = 'playing'; r.stage = 'turn'; r.trickNo = 4; T3.newTrick(r, r.players[0], false);
+  T3.doRequest(r, r.players[0]);
+  assert.equal(r.stage, 'consent');
+  return new Promise(res => setTimeout(() => { assert.equal(r.stage, 'turn'); assert.equal(r.players[1].hand.length, 2); res(); }, 120));
+});
+ok('reveal mode: asked player agrees to show -> peek only, cards stay', () => {
   const r = table2('reveal');
-  T2.playCard(r, r.players[0], '9H');
-  assert.equal(T2.doRequest(r, r.players[0]), null);
+  T2.doRequest(r, r.players[0]);
+  T2.doRespond(r, r.players[1], true);
   assert.equal(r.players[1].hand.length, 3);
   assert.equal(r.players[0].reveal.hand.length, 3);
-  assert.equal(r.stage, 'turn');
 });
-ok('off mode never opens the window', () => {
+ok('off mode: no request possible', () => {
   const r = table2('off');
-  T2.playCard(r, r.players[0], '9H');
-  assert.equal(r.stage, 'turn');
+  assert(!T2.view(r, r.players[0]).you.canRequest);
+  assert(T2.doRequest(r, r.players[0]));
 });
-ok('no window in the final duel', () => {
-  const r = T2.makeRoom(); ['A', 'B'].forEach(x => T2.addPlayer(r, fakeWs(), x));
-  r.players[0].hand = ['9H', '3D']; r.players[1].hand = ['2H', '5S'];
-  r.phase = 'playing'; r.stage = 'turn'; r.trickNo = 4; T2.newTrick(r, r.players[0], false);
-  T2.playCard(r, r.players[0], '9H');
-  assert.equal(r.stage, 'turn');
+ok('first trick and final duel: no requests', () => {
+  const r = table2('elimination'); r.trick.first = true;
+  assert(!T2.view(r, r.players[0]).you.canRequest);
+  const d = T2.makeRoom(); ['A', 'B'].forEach(x => T2.addPlayer(d, fakeWs(), x));
+  d.players[0].hand = ['9H', '3D']; d.players[1].hand = ['2H', '5S'];
+  d.phase = 'playing'; d.stage = 'turn'; d.trickNo = 4; T2.newTrick(d, d.players[0], false);
+  assert(!T2.view(d, d.players[0]).you.canRequest);
 });
 
-console.log(`\n${n} rule checks passed`);
-process.exit(0);
+Promise.all(pending).then(() => { console.log(`\n${n} rule checks passed`); process.exit(0); }, e => { console.error(e); process.exit(1); });

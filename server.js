@@ -10,7 +10,7 @@ const PUB = path.join(__dirname, 'public');
 const num = (v, d) => (v !== undefined && v !== '' && !isNaN(+v) ? +v : d);
 const SETTLE_MS = num(process.env.SETTLE_MS, 1800);        // how long a finished trick stays on the table
 const THULLA_MS = num(process.env.SETTLE_MS, 2600);        // ...and a Thulla (pick-up) trick
-const POST_MS = num(process.env.POST_MS, 5000);            // window after your move to request a hand
+const CONSENT_MS = num(process.env.CONSENT_MS, 15000);     // how long the asked player has to answer a hand request
 const BOT_MS = Math.max(1, num(process.env.BOT_MS, 4000)); // auto-play delay for disconnected players
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -54,7 +54,7 @@ function makeRoom() {
     code: roomCode(), players: [], hostId: null, settings: { requestMode: 'elimination' },
     phase: 'lobby', stage: 'lobby', trick: null, trickNo: 0, discarded: 0, loserId: null,
     seq: 0, event: null, outCounter: 0, lastActive: Date.now(),
-    turn: null, post: null, pick: null, settle: null, lastTrick: null, fxSeq: 0,
+    turn: null, consent: null, pick: null, settle: null, lastTrick: null, fxSeq: 0,
     timer: null, gen: 0, duelSeen: false,
   };
 }
@@ -99,8 +99,8 @@ function startGame(room) {
   clearTimeout(room.timer); room.timer = null; room.gen++;
   room.phase = 'playing'; room.stage = 'turn';
   room.loserId = null; room.discarded = 0; room.trickNo = 0; room.outCounter = 0;
-  room.post = null; room.pick = null; room.settle = null; room.lastTrick = null; room.fxSeq = 0; room.duelSeen = false;
-  room.players.forEach(p => { p.hand = []; p.out = false; p.place = 0; p.reveal = null; });
+  room.consent = null; room.pick = null; room.settle = null; room.lastTrick = null; room.fxSeq = 0; room.duelSeen = false;
+  room.players.forEach(p => { p.hand = []; p.out = false; p.place = 0; p.reveal = null; p.requestedThisTurn = false; });
   const deck = newDeck();
   deck.forEach((c, i) => room.players[i % room.players.length].hand.push(c));
   room.players.forEach(p => sortHand(p.hand));
@@ -120,7 +120,9 @@ function newTrick(room, leader, first = false) {
 function setTurn(room, pid) {
   room.stage = 'turn';
   room.turn = pid;
-  room.post = null; room.pick = null; room.settle = null;
+  room.consent = null; room.pick = null; room.settle = null;
+  const p = byId(room, pid);
+  if (p) p.requestedThisTurn = false;          // one hand request per turn
   scheduleBot(room);
 }
 
@@ -156,7 +158,6 @@ function advance(room, mover) {
     t.pos++;
   }
   if (t.pos >= t.order.length) return resolveNormal(room);
-  if (offerRequest(room, mover)) return;
   setTurn(room, t.order[t.pos]);
 }
 
@@ -174,7 +175,7 @@ function resolveThulla(room, thrower, card) {
   const taker = byId(room, best.pid);
   const plays = t.plays.slice();
   const text = `THULLA! ${taker.name} picks up ${plays.length} cards`;
-  room.stage = 'settle'; room.turn = null; room.post = null;
+  room.stage = 'settle'; room.turn = null; room.consent = null;
   room.settle = { kind: 'thulla', toId: taker.id, bestPid: taker.id, text };
   setEvent(room, 'thulla', text);
   later(room, THULLA_MS, () => {
@@ -191,7 +192,7 @@ function resolveNormal(room) {
   const best = highest(room);
   const winner = byId(room, best.pid);
   const plays = t.plays.slice();
-  room.stage = 'settle'; room.turn = null; room.post = null;
+  room.stage = 'settle'; room.turn = null; room.consent = null;
   room.settle = { kind: 'discard', toId: null, bestPid: winner.id, text: `${winner.name} wins the trick` };
   if (t.first) setEvent(room, 'info', 'First round safe — cards discarded');
   later(room, SETTLE_MS, () => {
@@ -221,7 +222,7 @@ function afterDiscard(room, winner) {
 function startPick(room, picker, other) {
   room.trickNo++;
   room.trick = { first: false, leadSuit: null, plays: [], order: [picker.id, other.id], pos: 0 };
-  room.stage = 'pick'; room.turn = picker.id; room.post = null;
+  room.stage = 'pick'; room.turn = picker.id; room.consent = null;
   room.pick = { pid: picker.id, fromId: other.id, perm: shuffle(other.hand.map((_, i) => i)) };
   setEvent(room, 'duel', `⚔ ${picker.name}'s last card won — picks a card from ${other.name}`);
   scheduleBot(room);
@@ -262,44 +263,57 @@ function finishTrick(room, leader) {
 
 function endGame(room, loser) {
   room.phase = 'over'; room.stage = 'over';
-  room.turn = null; room.post = null; room.pick = null; room.settle = null;
+  room.turn = null; room.consent = null; room.pick = null; room.settle = null;
   room.loserId = loser ? loser.id : null;
   clearTimeout(room.timer); room.timer = null;
   if (loser) setEvent(room, 'over', `${loser.name} is the Bhabhi!`);
   else setEvent(room, 'over', 'Nobody is the Bhabhi — draw!');
 }
 
-/* ---- hand requests: only AFTER you have made your move ---- */
-function offerRequest(room, mover) {
+/* ---- hand requests: BEFORE you deal your card, and the asked player must agree ---- */
+function canRequest(room, p) {
+  if (room.phase !== 'playing' || room.stage !== 'turn' || room.turn !== p.id) return null;
+  if (p.requestedThisTurn || room.settings.requestMode === 'off') return null;
   const t = room.trick;
-  if (POST_MS <= 0 || room.settings.requestMode === 'off' || t.first) return false;
-  if (!mover.connected || mover.hand.length === 0 || nonOut(room).length <= 2) return false;
-  const target = byId(room, t.order[t.pos]);          // the next player, who has not played yet
-  if (!target || target === mover || target.hand.length === 0) return false;
-  room.stage = 'post'; room.turn = null;
-  room.post = { pid: mover.id, targetId: target.id, until: Date.now() + POST_MS };
-  later(room, POST_MS, () => proceed(room));
-  return true;
-}
-
-function proceed(room) {                                // close the post-move window and carry on
-  clearTimeout(room.timer); room.timer = null;
-  if (room.stage !== 'post') return;
-  room.post = null;
-  const t = room.trick;
-  if (t.pos >= t.order.length) return resolveNormal(room);
-  setTurn(room, t.order[t.pos]);
+  if (t.first || p.hand.length === 0 || nonOut(room).length <= 2) return null;   // not in the opening trick / final duel
+  const target = byId(room, t.order[t.pos + 1]);                                   // next player, who hasn't played yet
+  if (!target || target === p || target.hand.length === 0) return null;
+  return target;
 }
 
 function doRequest(room, p) {
-  if (room.phase !== 'playing' || room.stage !== 'post' || !room.post || room.post.pid !== p.id) {
-    return 'You can only request a hand right after you have made your move.';
+  const target = canRequest(room, p);
+  if (!target) return 'You cannot request a hand right now.';
+  p.requestedThisTurn = true;
+  if (!target.connected) {
+    setEvent(room, 'request', `${target.name} is away — request declined`);
+    return null;                                          // still your turn, just play
   }
-  const target = byId(room, room.post.targetId);
-  const t = room.trick;
-  if (room.settings.requestMode === 'reveal') {
+  room.stage = 'consent'; room.turn = null;
+  room.consent = { pid: p.id, targetId: target.id, until: Date.now() + CONSENT_MS };
+  setEvent(room, 'request', `${p.name} asks ${target.name} for their hand…`);
+  later(room, CONSENT_MS, () => resolveConsent(room, false));   // no answer = no
+  return null;
+}
+
+function doRespond(room, p, accept) {
+  if (room.phase !== 'playing' || room.stage !== 'consent' || !room.consent || room.consent.targetId !== p.id) {
+    return 'Nobody is asking for your hand right now.';
+  }
+  resolveConsent(room, !!accept);
+  return null;
+}
+
+function resolveConsent(room, accept) {
+  clearTimeout(room.timer); room.timer = null;
+  if (room.stage !== 'consent' || !room.consent) return;
+  const p = byId(room, room.consent.pid), target = byId(room, room.consent.targetId), t = room.trick;
+  room.consent = null;
+  if (!accept) {
+    setEvent(room, 'request', `${target.name} refused ${p.name}'s request`);
+  } else if (room.settings.requestMode === 'reveal') {
     p.reveal = { name: target.name, hand: sortHand(target.hand.slice()) };
-    setEvent(room, 'request', `${p.name} peeked at ${target.name}'s hand`);
+    setEvent(room, 'request', `${target.name} showed their hand to ${p.name}`);
   } else {
     const n = target.hand.length;
     p.hand.push(...target.hand);
@@ -307,10 +321,10 @@ function doRequest(room, p) {
     target.hand = [];
     t.order.splice(t.order.indexOf(target.id), 1);
     markOut(room, target);
-    setEvent(room, 'request', `${p.name} took ${n} cards from ${target.name}!`);
+    setEvent(room, 'request', `${target.name} gave ${n} cards to ${p.name}!`);
   }
-  proceed(room);
-  return null;
+  room.stage = 'turn'; room.turn = p.id;                  // back to the requester: now they must play a card
+  scheduleBot(room);
 }
 
 /* auto-play for disconnected players so the table never stalls */
@@ -333,16 +347,16 @@ function scheduleBot(room) {
 function view(room, p) {
   const t = room.trick;
   const playing = room.phase === 'playing';
-  const post = playing && room.stage === 'post' ? room.post : null;
+  const consent = playing && room.stage === 'consent' ? room.consent : null;
   const pick = playing && room.stage === 'pick' ? room.pick : null;
-  const target = post && post.pid === p.id ? byId(room, post.targetId) : null;
+  const target = canRequest(room, p);
   return {
     code: room.code, phase: room.phase, stage: room.stage, hostId: room.hostId, settings: room.settings,
     turn: playing && room.stage === 'turn' ? room.turn : null, trickNo: room.trickNo, discarded: room.discarded,
     leadSuit: playing && t ? t.leadSuit : null, firstTrick: playing && t ? t.first : false,
     plays: playing && t ? t.plays : [], loserId: room.loserId,
     settle: playing ? room.settle : null,
-    post: post ? { pid: post.pid, ms: Math.max(0, post.until - Date.now()) } : null,
+    consent: consent ? { pid: consent.pid, targetId: consent.targetId, ms: Math.max(0, consent.until - Date.now()) } : null,
     pick: pick ? { pid: pick.pid, fromId: pick.fromId, n: pick.perm.length } : null,
     duel: playing && nonOut(room).length === 2,
     lastTrick: room.lastTrick,
@@ -352,6 +366,7 @@ function view(room, p) {
       id: p.id, hand: p.hand, legal: legalCards(room, p), reveal: p.reveal,
       canRequest: !!target, requestTarget: target ? target.name : null,
       mustPick: !!(pick && pick.pid === p.id),
+      mustAnswer: !!(consent && consent.targetId === p.id),
     },
   };
 }
@@ -370,7 +385,7 @@ const cleanName = (n, room) => {
 };
 
 function addPlayer(room, ws, name) {
-  const p = { id: uid(), token: uid() + uid(), name: cleanName(name, room), ws, connected: true, hand: [], out: false, place: 0, reveal: null };
+  const p = { id: uid(), token: uid() + uid(), name: cleanName(name, room), ws, connected: true, hand: [], out: false, place: 0, reveal: null, requestedThisTurn: false };
   room.players.push(p);
   if (!room.hostId) room.hostId = p.id;
   ws.ctx = { room, p };
@@ -442,12 +457,11 @@ function handle(ws, m) {
       if (err) return send(ws, { t: 'error', m: err });
       return broadcast(room);
     }
-    case 'endturn':                                     // "Done" — skip the optional request
-      if (room.phase === 'playing' && room.stage === 'post' && room.post && room.post.pid === p.id) {
-        proceed(room);
-        return broadcast(room);
-      }
-      return;
+    case 'respond': {                                   // asked player: give the hand away (true) or keep it
+      const err = doRespond(room, p, m.accept === true);
+      if (err) return send(ws, { t: 'error', m: err });
+      return broadcast(room);
+    }
     case 'pick': {
       const err = doPick(room, p, m.i);
       if (err) return send(ws, { t: 'error', m: err });
@@ -515,5 +529,5 @@ if (require.main === module) {
   server.listen(PORT, () => console.log(`Thulla server running on http://localhost:${PORT}`));
 } else {
   // loaded by the rule tests: expose internals, don't open a port
-  module.exports = { makeRoom, addPlayer, startGame, newTrick, playCard, doRequest, doPick, proceed, view, rooms, sortHand };
+  module.exports = { makeRoom, addPlayer, startGame, newTrick, playCard, doRequest, doRespond, doPick, view, rooms, sortHand };
 }
