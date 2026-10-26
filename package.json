@@ -1,0 +1,16 @@
+{
+  "name": "thulla-online",
+  "version": "1.0.0",
+  "description": "Online multiplayer Bhabhi Thulla card game (3-8 players)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
