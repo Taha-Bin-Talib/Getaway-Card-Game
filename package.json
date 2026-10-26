@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js"
+    "test": "node test.js",
+    "test:rules": "node rules-test.js"
   },
   "dependencies": {
     "ws": "^8.18.0"
