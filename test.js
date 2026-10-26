@@ -1,5 +1,5 @@
 // Bot test: plays full games over WebSockets with random legal moves and checks invariants.
-// Start the server with fast timers first:  PORT=3111 SETTLE_MS=0 POST_MS=120 node server.js &
+// Start the server with fast timers first:  PORT=3111 SETTLE_MS=0 node server.js &
 const WebSocket = require('ws');
 const URL = 'ws://localhost:' + (process.env.PORT || 3111);
 const rnd = n => Math.floor(Math.random() * n);
@@ -7,7 +7,7 @@ const rnd = n => Math.floor(Math.random() * n);
 function runGame(n, mode) {
   return new Promise((resolve, reject) => {
     const bots = [];
-    let code = null, started = false, done = false, violations = [], moves = 0, requests = 0, thullas = 0, picks = 0, windows = 0;
+    let code = null, started = false, done = false, violations = [], moves = 0, requests = 0, thullas = 0, picks = 0, answers = 0;
     const timer = setTimeout(() => { if (!done) { done = true; bots.forEach(b => b.ws.close()); reject(new Error('timeout n=' + n + ' mode=' + mode)); } }, 40000);
     const tx = (b, o) => b.ws.send(JSON.stringify(o));
 
@@ -40,13 +40,16 @@ function runGame(n, mode) {
             if (S.event && S.event.type === 'thulla' && S.event.seq > (b.lastThulla || 0)) { b.lastThulla = S.event.seq; thullas++; }
             if (S.log) violations.push('server still sends a card log');
           }
-          // you may only request a hand in the post-move window, never on your own turn before playing
-          if (S.turn === S.you.id && S.you.canRequest) violations.push('request offered before the move');
-          if (S.stage === 'post' && S.post.pid === S.you.id) {
-            windows++;
-            if (!S.you.canRequest) violations.push('post window without canRequest');
-            if (mode === 'off') violations.push('post window while requests are off');
-            if (Math.random() < 0.3) { requests++; tx(b, { t: 'request' }); } else tx(b, { t: 'endturn' });
+          // a hand request is made on your own turn BEFORE you deal; the asked player then answers
+          if (S.you.canRequest && !(S.stage === 'turn' && S.turn === S.you.id)) violations.push('request offered outside your own turn');
+          if (S.stage === 'consent') {
+            if (S.consent.targetId === S.you.id) {
+              if (!S.you.mustAnswer) violations.push('asked player has no prompt');
+              if (mode === 'off') violations.push('request while requests are off');
+              answers++; tx(b, { t: 'respond', accept: Math.random() < 0.5 });
+            }
+          } else if (S.turn === S.you.id && S.you.canRequest && Math.random() < 0.25) {
+            requests++; tx(b, { t: 'request' });
           } else if (S.stage === 'pick' && S.pick.pid === S.you.id) {
             picks++;
             if (!S.duel) violations.push('pick outside the final duel');
@@ -60,7 +63,7 @@ function runGame(n, mode) {
           done = true; clearTimeout(timer);
           const sum = S.players.reduce((a, p) => a + p.count, 0);
           if (sum + S.discarded !== 52) violations.push('end card count ' + (sum + S.discarded));
-          const res = { n, mode, loser: S.players.find(p => p.id === S.loserId)?.name || null, outs: S.players.filter(p => p.out).length, moves, requests, windows, thullas, picks, violations, counts: S.players.map(p => p.count) };
+          const res = { n, mode, loser: S.players.find(p => p.id === S.loserId)?.name || null, outs: S.players.filter(p => p.out).length, moves, requests, answers, thullas, picks, violations, counts: S.players.map(p => p.count) };
           bots.forEach(x => x.ws.close());
           resolve(res);
         }

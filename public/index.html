@@ -45,37 +45,36 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 .card.back>*{display:none}
 
 /* ---------- game screen ---------- */
-#game{max-width:760px;padding-top:10px}
+#game{max-width:1000px;padding-top:10px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 .top .meta{opacity:.9;font-size:.9rem}
 #status{font-weight:700;min-height:1.6em;text-align:center;margin:8px 0 4px;font-size:1.02rem}
 #status.duel{color:var(--gold)}
 
-#stage{width:min(100%,640px,calc(100dvh - 330px));min-width:min(100%,310px);margin:0 auto;position:relative}
-#ring{position:relative;width:100%;aspect-ratio:1/1;--u:6px}
-#felt{position:absolute;left:12%;top:12%;width:76%;height:76%;border-radius:50%;
-  background:radial-gradient(circle at 50% 42%,#13915f 0%,#0b6a45 55%,#07492f 100%);
+#stage{width:min(100%,920px,calc((100dvh - 330px)/.72));min-width:min(100%,320px);margin:0 auto;position:relative}
+#ring{position:relative;width:100%;aspect-ratio:100/72;--u:6px}
+#felt{position:absolute;left:3%;top:6%;width:94%;height:88%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 42%,#13915f 0%,#0b6a45 55%,#07492f 100%);
   border:calc(var(--u)*1.6) solid #5a3a1f;
-  box-shadow:0 0 0 calc(var(--u)*.4) #8a5d33,inset 0 0 calc(var(--u)*6) rgba(0,0,0,.55),0 calc(var(--u)*1.6) calc(var(--u)*5) rgba(0,0,0,.55)}
-#orbit{position:absolute;left:calc(50% - var(--u)*30);top:calc(50% - var(--u)*30);width:calc(var(--u)*60);height:calc(var(--u)*60);border-radius:50%;border:2px dashed rgba(255,255,255,.2);animation:spin 70s linear infinite;pointer-events:none}
-#orbit i{position:absolute;left:50%;top:50%;width:0;height:0;font-style:normal}
-#orbit i::after{content:"›";position:absolute;left:calc(var(--u)*30 - .5em);top:-.62em;font-size:calc(var(--u)*5);color:rgba(255,255,255,.4);transform:rotate(90deg)}
-@keyframes spin{to{transform:rotate(360deg)}}
-#arrow{position:absolute;left:50%;top:50%;width:0;height:0;transition:transform .7s cubic-bezier(.45,1.35,.55,1),opacity .3s;opacity:0;pointer-events:none}
-#arrow::after{content:"";position:absolute;left:calc(var(--u)*30);top:calc(var(--u)*-2.4);border-left:calc(var(--u)*4.6) solid var(--gold);border-top:calc(var(--u)*2.4) solid transparent;border-bottom:calc(var(--u)*2.4) solid transparent;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(245,197,66,.9))}
+  box-shadow:0 0 0 calc(var(--u)*.4) #8a5d33,inset 0 0 calc(var(--u)*7) rgba(0,0,0,.55),0 calc(var(--u)*1.6) calc(var(--u)*5) rgba(0,0,0,.55)}
+#orbit{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#orbit ellipse{fill:none;stroke:rgba(255,255,255,.28);stroke-width:2;stroke-dasharray:7 11;vector-effect:non-scaling-stroke;animation:flow 2.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-18}}
+#arrow{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;z-index:70;pointer-events:none;transition:opacity .3s}
+#arrow::after{content:"";position:absolute;left:calc(var(--u)*-2.3);top:calc(var(--u)*-2.4);border-left:calc(var(--u)*4.6) solid var(--gold);border-top:calc(var(--u)*2.4) solid transparent;border-bottom:calc(var(--u)*2.4) solid transparent;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(245,197,66,.9))}
 #arrow.thulla::after{border-left-color:#ff5a5a;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(255,70,70,.9))}
 #pile{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
-#pile .card{--cw:calc(var(--u)*7.4);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.72);opacity:.95}
-#pile .lbl{position:absolute;left:calc(var(--u)*-10);width:calc(var(--u)*20);top:calc(var(--u)*5.4);text-align:center;font-size:max(9px,calc(var(--u)*2.5));opacity:.75}
+#pile .card{--cw:calc(var(--u)*9);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.72);opacity:.95}
+#pile .lbl{position:absolute;left:calc(var(--u)*-10);width:calc(var(--u)*20);top:calc(var(--u)*6.6);text-align:center;font-size:max(9px,calc(var(--u)*2.5));opacity:.75}
 #slots,#fx,#seats{position:absolute;inset:0;pointer-events:none}
 .slot{position:absolute;width:0;height:0}
-.slot .card{--cw:calc(var(--u)*10.5);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
+.slot .card{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
 .slot.best .card{outline:calc(var(--u)*.7) solid var(--gold);box-shadow:0 0 calc(var(--u)*3) rgba(245,197,66,.8)}
 .slot.thulla .card{outline:calc(var(--u)*.7) solid #ff6b6b;box-shadow:0 0 calc(var(--u)*3) rgba(255,80,80,.8)}
-#fx .card,.fxcard{--cw:calc(var(--u)*10.5);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
+#fx .card,.fxcard{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
 #fx .card.back{--cw:calc(var(--u)*5)}
 
-.seat{position:absolute;width:calc(var(--u)*22);transform:translate(-50%,-50%);text-align:center;transition:opacity .3s}
+.seat{position:absolute;z-index:60;width:calc(var(--u)*22);transform:translate(-50%,-50%);text-align:center;transition:opacity .3s}
 .seat .fan{height:calc(var(--u)*6);display:flex;justify-content:center;align-items:flex-end;margin-bottom:calc(var(--u)*.4)}
 .seat .fan .card{--cw:calc(var(--u)*3.8);margin-left:calc(var(--u)*-1.9);box-shadow:0 1px 3px rgba(0,0,0,.5)}
 .seat .fan .card:first-child{margin-left:0}
@@ -104,7 +103,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 #reveal .cards{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px}
 #reveal .card{--cw:44px}
 #hand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 4px 18px}
-#hand .card{--cw:clamp(46px,12.5vw,66px);transition:transform .12s}
+#hand .card{--cw:clamp(48px,12.5vw,72px);transition:transform .12s}
 #hand .card.legal{cursor:pointer;transform:translateY(-8px)}
 #hand .card.legal:hover{transform:translateY(-16px)}
 #hand .card.dim{opacity:.5;filter:grayscale(.5)}
@@ -150,12 +149,12 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
     <details>
       <summary>How to play</summary>
       <ul>
-        <li>Everyone sits around a round table and the 52-card deck is dealt out. Aces are high. The holder of <b>A♠</b> opens the game.</li>
+        <li>Everyone sits around an oval table and the 52-card deck is dealt out. Aces are high. The holder of <b>A♠</b> opens the game.</li>
         <li>Play goes <b>clockwise</b> around the table. You must <b>follow the suit</b> that was led.</li>
         <li>If you can't follow suit, play any card — that's a <b>Thulla</b>. The trick stops and the player with the <b>highest card of the led suit</b> picks up every card on the table and leads next.</li>
         <li>If everyone follows suit, the highest card wins the trick, the cards are discarded and the winner leads.</li>
         <li><b>First-round protection:</b> in the opening trick nobody can Thulla — players without spades simply pass and the cards are discarded.</li>
-        <li><b>Request rule:</b> only <i>after</i> you have played your card (from trick 2) you get a few seconds to request the next player's whole hand. In <i>Elimination</i> mode they hand over every card and are out; in <i>Reveal</i> mode you just look at it.</li>
+        <li><b>Request rule:</b> on your turn, <i>before</i> you deal your card (from trick 2), you may ask the next player for their whole hand. They are asked and can <b>agree or refuse</b>. In <i>Elimination</i> mode, if they agree they hand over every card and are out; in <i>Reveal</i> mode you just look at it. Once per turn.</li>
         <li><b>Final duel:</b> when only two players are left, if a player's <b>last card is smaller</b> than the other's they are safe and the game ends. If their <b>last card is bigger</b>, they must pick one of the other player's cards (blind), and play it. This repeats until one player gets rid of their cards.</li>
         <li>Get rid of all your cards to be safe. The last player holding cards is the <b>Bhabhi</b>.</li>
       </ul>
@@ -179,10 +178,10 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
     <div class="small">Need 3–8 players. Cards are dealt randomly when the host starts.</div>
   </div>
   <div class="card-panel">
-    <h3 style="margin-top:0">Hand-request rule (after your move)</h3>
+    <h3 style="margin-top:0">Hand-request rule (before you play)</h3>
     <select id="reqMode">
-      <option value="elimination">Elimination &amp; transfer — requested player hands over all cards and is out</option>
-      <option value="reveal">Reveal only — requester just sees the next player's hand</option>
+      <option value="elimination">Elimination &amp; transfer — if the asked player agrees, they hand over all cards and are out</option>
+      <option value="reveal">Reveal only — if the asked player agrees, the requester just sees their hand</option>
       <option value="off">Off — no hand requests</option>
     </select>
     <div class="small" id="reqModeRO" style="display:none"></div>
@@ -203,7 +202,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
   <div id="stage">
     <div id="ring">
       <div id="felt"></div>
-      <div id="orbit"><i style="transform:rotate(0deg)"></i><i style="transform:rotate(90deg)"></i><i style="transform:rotate(180deg)"></i><i style="transform:rotate(270deg)"></i></div>
+      <svg id="orbit" viewBox="0 0 100 72" preserveAspectRatio="none"><ellipse cx="50" cy="36" rx="35" ry="23.5"/></svg>
       <div id="pile"></div>
       <div id="arrow"></div>
       <div id="slots"></div>
@@ -305,9 +304,10 @@ const nameOf = id => (S.players.find(p => p.id === id) || {}).name || '?';
    Seats are spread evenly round a circle, you at the bottom, play order running CLOCKWISE
    (screen angles grow clockwise because y points down). Everything is in % of the ring's width. */
 const ring = $('ring');
-const RS = 41, RC = 21;                       // seat radius, radius where a played card lands
+const RH = 72, CY = 36;                         // ring is 100 wide x 72 high (units = % of width): an oval table
+const SEAT = {x: 42, y: 29.5}, CARD = {x: 26, y: 16.5}, ARROW = {x: 36.5, y: 25.5};
 let geo = {}, mySeat = 0, ringW = 600;
-const polar = (deg, r) => { const a = deg*Math.PI/180; return {x: 50 + r*Math.cos(a), y: 50 + r*Math.sin(a)}; };
+const polar = (deg, E, k = 1) => { const a = deg*Math.PI/180; return {x: 50 + E.x*k*Math.cos(a), y: CY + E.y*k*Math.sin(a)}; };
 function fit(){
   ringW = ring.clientWidth || 600;
   ring.style.setProperty('--u', (ringW/100) + 'px');
@@ -319,7 +319,7 @@ function computeGeo(){
   geo = {};
   S.players.forEach((p, i) => { geo[p.id] = { ang: 90 + (i - mySeat) * 360 / n, i }; });
 }
-const place = (el, pt) => { el.style.left = pt.x + '%'; el.style.top = pt.y + '%'; };
+const place = (el, pt) => { el.style.left = pt.x + '%'; el.style.top = (pt.y / RH * 100) + '%'; };
 const jitter = (str) => { let h = 0; for (const ch of str) h = (h*31 + ch.charCodeAt(0)) | 0; return ((h % 17) - 8); };
 const slotRot = (pid, card) => (geo[pid].ang - 90) * .3 + jitter(card);
 
@@ -330,16 +330,16 @@ let arrowAng = null, sweepSeen = undefined, dealing = 0, overTimer = null;
 function resetTable(){
   slotEls.forEach(el => el.remove()); slotEls.clear();
   $('fx').innerHTML = ''; $('seats').innerHTML = ''; $('pile').innerHTML = '';
-  arrowAng = null; sweepSeen = undefined; actionsKey = '';
+  cancelAnimationFrame(arrowRaf); arrowAng = null; sweepSeen = undefined; actionsKey = '';
   clearTimeout(overTimer);
 }
 
 function renderSeats(){
   const seats = $('seats'); seats.innerHTML = '';
   S.players.forEach(p => {
-    const g = geo[p.id], pt = polar(g.ang, RS), me = p.id === S.you.id;
+    const g = geo[p.id], pt = polar(g.ang, SEAT), me = p.id === S.you.id;
     const d = document.createElement('div');
-    const active = p.id === S.turn || (S.post && S.post.pid === p.id) || (S.pick && S.pick.pid === p.id);
+    const active = p.id === S.turn || (S.consent && S.consent.targetId === p.id) || (S.pick && S.pick.pid === p.id);
     d.className = 'seat' + (active ? ' turn' : '') + (p.out ? ' out' : '') + (me ? ' you' : '');
     place(d, pt);
     let fan = '';
@@ -347,7 +347,7 @@ function renderSeats(){
       const k = Math.min(p.count, 6);
       for (let j = 0; j < k; j++) fan += `<div class="card back" style="transform:rotate(${(j-(k-1)/2)*9}deg)"></div>`;
     }
-    d.innerHTML = `<div class="fan">${fan}</div><div class="pill">${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}${me?' (you)':''}</div><div class="ct">${p.out?'OUT ✔ #'+p.place:p.count+(p.count===1?' card':' cards')}</div></div>`;
+    d.innerHTML = `<div class="fan">${fan}</div><div class="pill">${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}</div><div class="ct">${me?'You · ':''}${p.out?'OUT ✔ #'+p.place:p.count+(p.count===1?' card':' cards')}</div></div>`;
     seats.appendChild(d);
   });
 }
@@ -372,13 +372,13 @@ function renderPlays(){
     keep.add(pl.card);
     const off = pl.card.slice(-1) !== S.leadSuit;
     let el = slotEls.get(pl.card);
-    const dest = polar(geo[pl.pid].ang, RC), rot = slotRot(pl.pid, pl.card);
+    const dest = polar(geo[pl.pid].ang, CARD), rot = slotRot(pl.pid, pl.card);
     if (!el) {                                             // a card has just been dealt onto the table
       el = document.createElement('div'); el.className = 'slot';
       el.appendChild(cardEl(pl.card));
       place(el, dest); el.style.transform = `rotate(${rot}deg)`; el.style.zIndex = 10 + k;
       $('slots').appendChild(el); slotEls.set(pl.card, el);
-      const from = polar(geo[pl.pid].ang, RS + 3);
+      const from = polar(geo[pl.pid].ang, SEAT, 1.1);
       const dx = (from.x - dest.x) * ringW / 100, dy = (from.y - dest.y) * ringW / 100;
       if (el.animate) el.animate([
         { transform: `translate(${dx}px,${dy}px) rotate(${rot - 140}deg) scale(.55)`, opacity: 0 },
@@ -395,10 +395,10 @@ function renderPlays(){
 /* finished trick leaves the table: into the discard pile, or (Thulla) to whoever picks it up */
 function sweep(lt){
   const toSeat = lt.toId && geo[lt.toId];
-  const target = toSeat ? polar(geo[lt.toId].ang, RS) : {x: 50, y: 50};
+  const target = toSeat ? polar(geo[lt.toId].ang, SEAT) : {x: 50, y: CY};
   lt.plays.forEach((pl, k) => {
     if (!geo[pl.pid]) return;
-    const from = polar(geo[pl.pid].ang, RC), rot = slotRot(pl.pid, pl.card);
+    const from = polar(geo[pl.pid].ang, CARD), rot = slotRot(pl.pid, pl.card);
     const g = document.createElement('div'); g.className = 'slot'; g.appendChild(cardEl(pl.card));
     place(g, from); g.style.transform = `rotate(${rot}deg)`;
     $('fx').appendChild(g);
@@ -418,10 +418,10 @@ function dealAnim(){
   let k = 0;
   dealing = 1; setTimeout(() => { dealing = 0; }, 2200);
   for (let r = 0; r < rounds; r++) for (let i = 0; i < n; i++, k++) {
-    const p = S.players[i], to = polar(geo[p.id].ang, RS - 2);
+    const p = S.players[i], to = polar(geo[p.id].ang, SEAT, .96);
     const c = cardEl('back'); const w = document.createElement('div'); w.className = 'slot';
-    place(w, {x:50, y:50}); w.appendChild(c); $('fx').appendChild(w);
-    const dx = (to.x - 50) * ringW / 100, dy = (to.y - 50) * ringW / 100;
+    place(w, {x:50, y:CY}); w.appendChild(c); $('fx').appendChild(w);
+    const dx = (to.x - 50) * ringW / 100, dy = (to.y - CY) * ringW / 100;
     if (!w.animate) { w.remove(); continue; }
     const a = w.animate([
       { transform: 'translate(0,0) rotate(0deg) scale(.7)', opacity: 0 },
@@ -432,20 +432,33 @@ function dealAnim(){
   }
 }
 
-/* the gold arrow glides round the table to whoever has to act */
+/* the gold arrow glides ROUND the oval to whoever has to act (clockwise) */
+let arrowRaf = 0;
+function drawArrow(deg){
+  const a = $('arrow'), r = deg*Math.PI/180, pt = polar(deg, ARROW);
+  a.style.left = pt.x + '%'; a.style.top = (pt.y / RH * 100) + '%';
+  const out = Math.atan2(Math.sin(r)/ARROW.y, Math.cos(r)/ARROW.x) * 180 / Math.PI;   // outward normal of the ellipse
+  a.style.transform = `rotate(${out}deg)`;
+}
 function pointer(){
   const a = $('arrow');
-  const pid = S.turn || (S.post && S.post.pid) || (S.pick && S.pick.pid) || (S.settle && S.settle.bestPid) || null;
+  const pid = S.turn || (S.consent && S.consent.targetId) || (S.pick && S.pick.pid) || (S.settle && S.settle.bestPid) || null;
   if (!pid || !geo[pid] || S.phase === 'over') { a.style.opacity = 0; return; }
   const target = geo[pid].ang;
   a.style.opacity = 1;
   a.classList.toggle('thulla', !!(S.settle && S.settle.kind === 'thulla'));
-  if (arrowAng === null) arrowAng = target;
-  else {
-    let cw = (((target - arrowAng) % 360) + 360) % 360;      // clockwise distance
-    arrowAng += cw <= 200 ? cw : cw - 360;
-  }
-  a.style.transform = `rotate(${arrowAng}deg)`;
+  if (arrowAng === null) { arrowAng = target; drawArrow(arrowAng); return; }
+  const cw = (((target - arrowAng) % 360) + 360) % 360;       // clockwise distance
+  const end = arrowAng + (cw <= 200 ? cw : cw - 360);
+  if (Math.abs(end - arrowAng) < .01) { drawArrow(arrowAng); return; }
+  cancelAnimationFrame(arrowRaf);
+  const start = arrowAng, t0 = performance.now(), dur = 700;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    arrowAng = start + (end - start) * e; drawArrow(arrowAng);
+    if (k < 1) arrowRaf = requestAnimationFrame(step);
+  };
+  arrowRaf = requestAnimationFrame(step);
 }
 
 function renderTable(){
@@ -453,25 +466,33 @@ function renderTable(){
   renderSeats(); renderPlays(); renderPile(); pointer();
 }
 
-/* ---------- action area: request after your move / blind pick in the final duel ---------- */
+/* ---------- action area: request BEFORE you deal / answer a request / blind pick in the final duel ---------- */
 let actionsKey = '';
 function renderActions(){
   const box = $('actions'), you = S.you;
   let key = '';
-  if (S.phase === 'playing' && you.canRequest && S.post) key = 'post:' + S.trickNo + ':' + S.plays.length;
-  else if (S.phase === 'playing' && you.mustPick && S.pick) key = 'pick:' + S.trickNo;
+  if (S.phase === 'playing') {
+    if (you.mustAnswer && S.consent) key = 'ans:' + S.trickNo + ':' + S.consent.pid;
+    else if (you.mustPick && S.pick) key = 'pick:' + S.trickNo;
+    else if (S.stage === 'turn' && S.turn === you.id && you.canRequest) key = 'req:' + S.trickNo + ':' + S.plays.length + ':' + you.requestTarget;
+  }
   if (key === actionsKey) return;
   actionsKey = key; box.innerHTML = '';
-  if (key.startsWith('post')) {
-    const elim = S.settings.requestMode === 'elimination';
+  const elim = S.settings.requestMode === 'elimination';
+  if (key.startsWith('req')) {
     const d = document.createElement('div'); d.className = 'box';
-    d.innerHTML = `<div class="msg">✅ Move done. Request ${esc(you.requestTarget)}'s hand?</div>
-      <div class="row"><button class="btn danger" id="reqBtn">🃏 ${elim ? 'Take all of ' + esc(you.requestTarget) + "'s cards" : 'Peek at ' + esc(you.requestTarget) + "'s hand"}</button>
-      <button class="btn ghost" id="doneBtn">Done ▸</button></div>
-      <div class="bar"><i style="animation-duration:${Math.max(200, S.post.ms)}ms"></i></div>`;
+    d.innerHTML = `<div class="row"><button class="btn danger" id="reqBtn">🃏 Request ${esc(you.requestTarget)}'s ${elim ? 'cards' : 'hand'}</button></div><div class="small" style="margin-top:6px">Optional — ask before you deal. ${esc(you.requestTarget)} can say no.</div>`;
     box.appendChild(d);
     $('reqBtn').onclick = () => send({t:'request'});
-    $('doneBtn').onclick = () => send({t:'endturn'});
+  } else if (key.startsWith('ans')) {
+    const from = nameOf(S.consent.pid);
+    const d = document.createElement('div'); d.className = 'box';
+    d.innerHTML = `<div class="msg">🃏 ${esc(from)} is asking for ${elim ? 'all your cards' : 'a look at your hand'}. ${elim ? 'Give them away? (You would be out of the game.)' : 'Show it?'}</div>
+      <div class="row"><button class="btn" id="yesBtn">${elim ? 'Give my cards' : 'Show my hand'}</button><button class="btn ghost" id="noBtn">Keep them</button></div>
+      <div class="bar"><i style="animation-duration:${Math.max(200, S.consent.ms)}ms"></i></div>`;
+    box.appendChild(d);
+    $('yesBtn').onclick = () => send({t:'respond', accept:true});
+    $('noBtn').onclick = () => send({t:'respond', accept:false});
   } else if (key.startsWith('pick')) {
     const from = nameOf(S.pick.fromId);
     const d = document.createElement('div'); d.className = 'box';
@@ -520,9 +541,14 @@ function statusText(){
   const you = S.you, myTurn = S.turn === you.id;
   if (S.phase === 'over') return 'Game over';
   if (S.settle) return S.settle.text;
-  if (S.stage === 'post') return you.canRequest ? '✅ Move done' : `Waiting for ${esc(nameOf(S.post.pid))}…`;
+  if (S.stage === 'consent') {
+    if (you.mustAnswer) return `🃏 ${esc(nameOf(S.consent.pid))} is asking for your ${S.settings.requestMode === 'elimination' ? 'cards' : 'hand'} — your call`;
+    if (S.consent.pid === you.id) return `Waiting for ${esc(nameOf(S.consent.targetId))} to answer…`;
+    return `${esc(nameOf(S.consent.pid))} asked ${esc(nameOf(S.consent.targetId))} for their hand…`;
+  }
   if (S.stage === 'pick') return you.mustPick ? `⚔ Pick a card from ${esc(nameOf(S.pick.fromId))}` : `⚔ ${esc(nameOf(S.pick.pid))} is picking a card from ${esc(nameOf(S.pick.fromId))}…`;
   if (myTurn) {
+    if (you.canRequest) return `🎯 Your turn — request ${esc(you.requestTarget)}'s hand first, or deal a card`;
     if (!S.plays.length) return '🎯 Your turn — lead any card';
     if (you.hand.some(c => c.slice(-1)===S.leadSuit)) return `🎯 Your turn — follow ${SYM[S.leadSuit]}`;
     return `⚠️ No ${SYM[S.leadSuit]}! Any card you play is a THULLA`;
