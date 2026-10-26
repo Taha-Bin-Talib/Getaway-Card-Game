@@ -183,6 +183,16 @@ ok('reveal mode: asked player agrees to show -> peek only, cards stay', () => {
   assert.equal(r.players[1].hand.length, 3);
   assert.equal(r.players[0].reveal.hand.length, 3);
 });
+ok('can only request a player who has FEWER than 5 cards', () => {
+  const mk = n => { const r = table2('elimination'); r.players[1].hand = ['2H','3H','4H','5H','6H','7H','8H'].slice(0, n); return r; };
+  assert(!T2.view(mk(7), mk(7).players[0]).you.canRequest);
+  for (const [n, can] of [[7, false], [5, false], [4, true], [1, true]]) {
+    const r = mk(n);
+    assert.equal(T2.view(r, r.players[0]).you.canRequest, can, n + ' cards');
+    if (!can) assert(T2.doRequest(r, r.players[0]));            // refused with an error
+    else assert.equal(T2.doRequest(r, r.players[0]), null);
+  }
+});
 ok('off mode: no request possible', () => {
   const r = table2('off');
   assert(!T2.view(r, r.players[0]).you.canRequest);
