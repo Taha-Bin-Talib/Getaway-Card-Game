@@ -8,7 +8,7 @@
 :root{--felt:#0d6b45;--felt2:#06402a;--gold:#f5c542;--ink:#2b1020;--red:#d32f2f;--panel:rgba(0,0,0,.35)}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,#3b1a63 0%,#150a2e 78%) fixed;min-height:100dvh;overflow-x:hidden}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt2) 75%) fixed;min-height:100dvh;overflow-x:hidden}
 button{font:inherit;cursor:pointer}
 .screen{display:none;max-width:980px;margin:0 auto;padding:16px}
 .screen.on{display:block}
@@ -53,21 +53,16 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 
 #stage{width:min(100%,920px,calc((100dvh - 330px)/.72));min-width:min(100%,320px);margin:0 auto;position:relative}
 #ring{position:relative;width:100%;aspect-ratio:100/72;--u:6px}
-@property --rot{syntax:'<angle>';inherits:false;initial-value:0deg}
-#felt{position:absolute;left:3%;top:6%;width:94%;height:88%;border-radius:50%;--rot:0deg;
-  background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 62%),
-    conic-gradient(from var(--rot) at 50% 50%,#ff3d6e,#ff9a3d,#ffe23d,#5be05b,#2ec9d9,#4a7bff,#a557ff,#ff4fd0,#ff3d6e);
-  animation:hue 40s linear infinite;
-  border:calc(var(--u)*1.6) solid #fff3fb;
-  box-shadow:0 0 0 calc(var(--u)*.4) #ffb3e0,inset 0 0 calc(var(--u)*7) rgba(40,0,70,.45),0 calc(var(--u)*1.6) calc(var(--u)*6) rgba(0,0,0,.6)}
-@keyframes hue{to{--rot:360deg}}
-.slot .card,#fx .card{filter:drop-shadow(0 calc(var(--u)*.5) calc(var(--u)*.8) rgba(30,0,50,.55))}
+#felt{position:absolute;left:3%;top:6%;width:94%;height:88%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 42%,#13915f 0%,#0b6a45 55%,#07492f 100%);
+  border:calc(var(--u)*1.6) solid #5a3a1f;
+  box-shadow:0 0 0 calc(var(--u)*.4) #8a5d33,inset 0 0 calc(var(--u)*7) rgba(0,0,0,.55),0 calc(var(--u)*1.6) calc(var(--u)*5) rgba(0,0,0,.55)}
 #orbit{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 #orbit ellipse{fill:none;stroke:rgba(255,255,255,.28);stroke-width:2;stroke-dasharray:7 11;vector-effect:non-scaling-stroke;animation:flow 2.4s linear infinite}
 @keyframes flow{to{stroke-dashoffset:-18}}
 #arrow{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;z-index:70;pointer-events:none;transition:opacity .3s}
-#arrow::after{content:"";position:absolute;left:calc(var(--u)*-2.3);top:calc(var(--u)*-2.4);border-left:calc(var(--u)*4.6) solid #fff;border-top:calc(var(--u)*2.4) solid transparent;border-bottom:calc(var(--u)*2.4) solid transparent;filter:drop-shadow(0 0 calc(var(--u)*.5) rgba(30,0,60,.95)) drop-shadow(0 0 calc(var(--u)*1.4) rgba(255,255,255,.8))}
-#arrow.thulla::after{border-left-color:#e0002f;filter:drop-shadow(0 0 calc(var(--u)*.5) #fff) drop-shadow(0 0 calc(var(--u)*1.4) rgba(255,255,255,.8))}
+#arrow::after{content:"";position:absolute;left:calc(var(--u)*-2.3);top:calc(var(--u)*-2.4);border-left:calc(var(--u)*4.6) solid var(--gold);border-top:calc(var(--u)*2.4) solid transparent;border-bottom:calc(var(--u)*2.4) solid transparent;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(245,197,66,.9))}
+#arrow.thulla::after{border-left-color:#ff5a5a;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(255,70,70,.9))}
 #pile{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 #pile .card{--cw:calc(var(--u)*9);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.72);opacity:.95}
 #pile .lbl{position:absolute;left:calc(var(--u)*-10);width:calc(var(--u)*20);top:calc(var(--u)*6.6);text-align:center;font-size:max(9px,calc(var(--u)*2.5));opacity:.75}
