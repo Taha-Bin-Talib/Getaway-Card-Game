@@ -48,7 +48,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 #game{max-width:1000px;padding-top:10px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 .top .meta{opacity:.9;font-size:.9rem}
-#status{font-weight:700;min-height:1.6em;text-align:center;margin:8px 0 4px;font-size:1.02rem}
+#status{font-weight:700;min-height:1.6em;text-align:center;margin:30px 0 4px;font-size:1.02rem}
 #status.duel{color:var(--gold)}
 
 #stage{width:min(100%,920px,calc((100dvh - 330px)/.72));min-width:min(100%,320px);margin:0 auto;position:relative}
@@ -86,6 +86,11 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 .seat .pill{display:inline-block;max-width:100%;padding:calc(var(--u)*.7) calc(var(--u)*1.8);border-radius:calc(var(--u)*2.4);background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.18);backdrop-filter:blur(3px);position:relative}
 .seat .nm{font-weight:700;font-size:max(10px,calc(var(--u)*3.2));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(var(--u)*18)}
 .seat .ct{font-size:max(9px,calc(var(--u)*2.6));opacity:.85;line-height:1.15}
+.seat .tm{font-size:max(9px,calc(var(--u)*2.5));font-weight:800;color:#ffe9a8;line-height:1.2}
+.seat .tm.low{color:#ff8a8a}
+.seat .tbar{height:max(3px,calc(var(--u)*.7));border-radius:3px;background:rgba(255,255,255,.2);margin-top:2px;overflow:hidden}
+.seat .tbar i{display:block;height:100%;background:var(--gold);transform-origin:left;animation:shrink linear forwards}
+.seat .tm.low~.tbar i{background:#ff6b6b}
 .seat.you .pill{border-color:rgba(245,197,66,.55)}
 .seat.turn .pill{border-color:var(--gold);box-shadow:0 0 calc(var(--u)*3.5) rgba(245,197,66,.85);animation:pulse 1.2s ease-in-out infinite}
 .seat.out{opacity:.5}
@@ -158,7 +163,8 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
         <li>Play goes <b>clockwise</b> around the table. You must <b>follow the suit</b> that was led.</li>
         <li>If you can't follow suit, play any card — that's a <b>Thulla</b>. The trick stops and the player with the <b>highest card of the led suit</b> picks up every card on the table and leads next.</li>
         <li>If everyone follows suit, the highest card wins the trick, the cards are discarded and the winner leads.</li>
-        <li><b>First-round protection:</b> in the opening trick nobody can Thulla — players without spades simply pass and the cards are discarded.</li>
+        <li><b>First-round protection:</b> in the opening trick nobody can Thulla. If you have no spades you may throw <b>any card lower than 10</b> (if you have none, you pass), and the cards are discarded.</li>
+        <li><b>Move timer:</b> you have <b>1 minute</b> per move. If you run out of time, your highest card of the suit being followed is played for you.</li>
         <li><b>Request rule:</b> on your turn, <i>before</i> you deal your card (from trick 2), you may ask the next player for their whole hand — but only if they have <b>fewer than 5 cards</b>. They are asked and can <b>agree or refuse</b>. In <i>Elimination</i> mode, if they agree they hand over every card and are out; in <i>Reveal</i> mode you just look at it. Once per turn.</li>
         <li><b>Final duel:</b> when only two players are left, if a player's <b>last card is smaller</b> than the other's they are safe and the game ends. If their <b>last card is bigger</b>, they must pick one of the other player's cards (blind), and play it. This repeats until one player gets rid of their cards.</li>
         <li>Get rid of all your cards to be safe. The last player holding cards is the <b>Bhabhi</b>.</li>
@@ -261,7 +267,12 @@ function connect(){
   ws.onclose = () => { $('conn').style.display = 'block'; setTimeout(connect, 1500); };
 }
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else queue.push(o); }
-function clearSession(){ session = null; S = null; lastSeq = null; prevPhase = null; resetTable(); localStorage.removeItem('thulla'); show('home'); }
+function clearSession(){
+  session = null; S = null; lastSeq = null; prevPhase = null;
+  clearTimeout(overTimer); $('over').classList.remove('on');      // the game-over popup must not stay on top of the home page
+  $('toast').className = ''; $('actions').innerHTML = ''; $('reveal').style.display = 'none';
+  resetTable(); localStorage.removeItem('thulla'); show('home');
+}
 function showErr(msg){
   ['homeErr','lobbyErr'].forEach(id => $(id).textContent = msg);
   toast(msg, '');
@@ -352,7 +363,7 @@ function renderSeats(){
       const k = Math.min(p.count, 6);
       for (let j = 0; j < k; j++) fan += `<div class="card back" style="transform:rotate(${(j-(k-1)/2)*9}deg)"></div>`;
     }
-    d.innerHTML = `<div class="fan">${fan}</div><div class="pill">${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}</div><div class="ct">${me?'You · ':''}${p.out?'OUT ✔ #'+p.place:p.count+(p.count===1?' card':' cards')}</div></div>`;
+    d.innerHTML = `<div class="fan">${fan}</div><div class="pill">${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}</div><div class="ct">${me?'You · ':''}${p.out?'OUT ✔ #'+p.place:p.count+(p.count===1?' card':' cards')}</div>${S.timer && S.timer.pid === p.id ? `<div class="tm" data-end="${Date.now() + S.timer.ms}">⏱</div><div class="tbar"><i style="animation-duration:${Math.max(100, S.timer.ms)}ms"></i></div>` : ''}</div>`;
     seats.appendChild(d);
   });
 }
@@ -375,7 +386,7 @@ function renderPlays(){
   S.plays.forEach(pl => { if (pl.card.slice(-1)===S.leadSuit && (!best || parseInt(pl.card)>parseInt(best.card))) best = pl; });
   S.plays.forEach((pl, k) => {
     keep.add(pl.card);
-    const off = pl.card.slice(-1) !== S.leadSuit;
+    const off = pl.card.slice(-1) !== S.leadSuit && !S.firstTrick;   // the first round is never a Thulla
     let el = slotEls.get(pl.card);
     const dest = polar(geo[pl.pid].ang, CARD), rot = slotRot(pl.pid, pl.card);
     if (!el) {                                             // a card has just been dealt onto the table
@@ -556,6 +567,7 @@ function statusText(){
     if (you.canRequest) return `🎯 Your turn — request ${esc(you.requestTarget)}'s hand first, or deal a card`;
     if (!S.plays.length) return '🎯 Your turn — lead any card';
     if (you.hand.some(c => c.slice(-1)===S.leadSuit)) return `🎯 Your turn — follow ${SYM[S.leadSuit]}`;
+    if (S.firstTrick) return `🎯 No ${SYM[S.leadSuit]} — play any card lower than 10`;
     return `⚠️ No ${SYM[S.leadSuit]}! Any card you play is a THULLA`;
   }
   return `Waiting for ${esc(nameOf(S.turn))}…` + (S.firstTrick ? ' (first round: no Thulla)' : '');
@@ -622,6 +634,13 @@ function handleEvent(){
   }
 }
 
+setInterval(() => {                                   // move-timer countdown on the active seat
+  document.querySelectorAll('.seat .tm').forEach(el => {
+    const left = Math.max(0, Math.ceil((+el.dataset.end - Date.now()) / 1000));
+    el.textContent = '⏱ ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+    el.classList.toggle('low', left <= 10);
+  });
+}, 250);
 connect();
 </script>
 </body>

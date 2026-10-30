@@ -11,6 +11,7 @@ const num = (v, d) => (v !== undefined && v !== '' && !isNaN(+v) ? +v : d);
 const SETTLE_MS = num(process.env.SETTLE_MS, 1800);        // how long a finished trick stays on the table
 const THULLA_MS = num(process.env.SETTLE_MS, 2600);        // ...and a Thulla (pick-up) trick
 const CONSENT_MS = num(process.env.CONSENT_MS, 15000);     // how long the asked player has to answer a hand request
+const TURN_MS = num(process.env.TURN_MS, 60000);           // time to make your move before the server plays for you
 const REQUEST_MAX_CARDS = 5;                                // a hand can only be requested from a player holding FEWER than this many cards
 const BOT_MS = Math.max(1, num(process.env.BOT_MS, 4000)); // auto-play delay for disconnected players
 const MIME = {
@@ -56,7 +57,7 @@ function makeRoom() {
     phase: 'lobby', stage: 'lobby', trick: null, trickNo: 0, discarded: 0, loserId: null,
     seq: 0, event: null, outCounter: 0, lastActive: Date.now(),
     turn: null, consent: null, pick: null, settle: null, lastTrick: null, fxSeq: 0,
-    timer: null, gen: 0, duelSeen: false,
+    timer: null, gen: 0, duelSeen: false, turnUntil: 0,
   };
 }
 const byId = (room, id) => room.players.find(p => p.id === id);
@@ -124,6 +125,7 @@ function setTurn(room, pid) {
   room.consent = null; room.pick = null; room.settle = null;
   const p = byId(room, pid);
   if (p) p.requestedThisTurn = false;          // one hand request per turn
+  room.turnUntil = Date.now() + TURN_MS;       // 1-minute move timer
   scheduleBot(room);
 }
 
@@ -133,7 +135,7 @@ function legalCards(room, p) {
   if (t.plays.length === 0) return t.first ? p.hand.filter(c => c === '14S') : p.hand.slice();
   const same = p.hand.filter(c => suit(c) === t.leadSuit);
   if (same.length) return same;
-  return t.first ? [] : p.hand.slice();
+  return t.first ? p.hand.filter(c => rank(c) < 10) : p.hand.slice();   // first round, no spade: any card below 10
 }
 
 function playCard(room, p, cardId) {
@@ -145,18 +147,18 @@ function playCard(room, p, cardId) {
   if (isLead) t.leadSuit = suit(cardId);
   t.plays.push({ pid: p.id, card: cardId });
   room.turn = null;
-  if (off) return resolveThulla(room, p, cardId);
+  if (off && !t.first) return resolveThulla(room, p, cardId);   // the first round can never be a Thulla
   advance(room, p);
 }
 
 function advance(room, mover) {
   const t = room.trick;
   t.pos++;
-  // first-round protection: players without the led suit simply pass
+  // first round: no-spade players throw a card below 10 (or pass if they have none)
   while (t.pos < t.order.length && t.first) {
     const q = byId(room, t.order[t.pos]);
-    if (q.hand.some(c => suit(c) === t.leadSuit)) break;
-    t.pos++;
+    if (q.hand.some(c => suit(c) === t.leadSuit || rank(c) < 10)) break;   // can follow with a spade, or throw a card below 10
+    t.pos++;                                                                // otherwise passes
   }
   if (t.pos >= t.order.length) return resolveNormal(room);
   setTurn(room, t.order[t.pos]);
@@ -225,6 +227,7 @@ function startPick(room, picker, other) {
   room.trick = { first: false, leadSuit: null, plays: [], order: [picker.id, other.id], pos: 0 };
   room.stage = 'pick'; room.turn = picker.id; room.consent = null;
   room.pick = { pid: picker.id, fromId: other.id, perm: shuffle(other.hand.map((_, i) => i)) };
+  room.turnUntil = Date.now() + TURN_MS;
   setEvent(room, 'duel', `⚔ ${picker.name}'s last card won — picks a card from ${other.name}`);
   scheduleBot(room);
 }
@@ -329,19 +332,35 @@ function resolveConsent(room, accept) {
   scheduleBot(room);
 }
 
-/* auto-play for disconnected players so the table never stalls */
+/* Move timer: a connected player who doesn't move within TURN_MS gets their HIGHEST legal card played
+   (highest card of the suit being followed; highest card overall when leading). Disconnected players are
+   auto-played quickly (random legal card) so the table never stalls. Duel picks time out randomly. */
 function scheduleBot(room) {
   if (room.phase !== 'playing') return;
   if (room.stage !== 'turn' && room.stage !== 'pick') return;   // other stages already run on their own timer
   clearTimeout(room.timer); room.timer = null;
   const p = byId(room, room.turn);
-  if (!p || p.connected) return;
+  if (!p) return;
   const stage = room.stage, turn = room.turn, gen = room.gen;
-  later(room, BOT_MS, () => {
-    if (room.gen !== gen || room.stage !== stage || room.turn !== turn || p.connected) return;
-    if (stage === 'pick') return void doPick(room, p, crypto.randomInt(room.pick.perm.length));
+  const remaining = Math.max(0, room.turnUntil - Date.now());
+  const wait = p.connected ? remaining : Math.min(remaining, BOT_MS);
+  later(room, Math.max(1, wait), () => {
+    if (room.gen !== gen || room.stage !== stage || room.turn !== turn) return;
+    const due = Date.now() >= room.turnUntil - 5;
+    if (p.connected && !due) return scheduleBot(room);          // player is back / not due yet
+    if (stage === 'pick') {
+      if (p.connected) setEvent(room, 'info', `${p.name} ran out of time — a card was picked for them`);
+      return void doPick(room, p, crypto.randomInt(room.pick.perm.length));
+    }
     const legal = legalCards(room, p);
-    if (legal.length) playCard(room, p, legal[crypto.randomInt(legal.length)]);
+    if (!legal.length) return;
+    if (p.connected) {
+      const card = legal.reduce((a, b) => (rank(b) > rank(a) ? b : a));
+      setEvent(room, 'info', `${p.name} ran out of time — highest card played`);
+      playCard(room, p, card);
+    } else {
+      playCard(room, p, legal[crypto.randomInt(legal.length)]);
+    }
   });
 }
 
@@ -360,6 +379,7 @@ function view(room, p) {
     settle: playing ? room.settle : null,
     consent: consent ? { pid: consent.pid, targetId: consent.targetId, ms: Math.max(0, consent.until - Date.now()) } : null,
     pick: pick ? { pid: pick.pid, fromId: pick.fromId, n: pick.perm.length } : null,
+    timer: playing && (room.stage === 'turn' || room.stage === 'pick') && room.turn ? { pid: room.turn, ms: Math.max(0, room.turnUntil - Date.now()) } : null,
     duel: playing && nonOut(room).length === 2,
     lastTrick: room.lastTrick,
     event: room.event,
@@ -393,6 +413,13 @@ function addPlayer(room, ws, name) {
   ws.ctx = { room, p };
   send(ws, { t: 'joined', code: room.code, token: p.token });
   return p;
+}
+
+function reassignHost(room) {                       // keep a connected host so "Play again" always works
+  const h = byId(room, room.hostId);
+  if (h && h.connected) return;
+  const next = room.players.find(q => q.connected);
+  if (next) room.hostId = next.id;
 }
 
 function removeFromLobby(room, p) {
@@ -480,7 +507,7 @@ function handle(ws, m) {
     case 'leave': {
       ws.ctx = null;
       if (room.phase === 'lobby') { removeFromLobby(room, p); if (rooms.has(room.code)) broadcast(room); }
-      else { p.connected = false; p.ws = null; scheduleBot(room); broadcast(room); }
+      else { p.connected = false; p.ws = null; reassignHost(room); scheduleBot(room); broadcast(room); }
       return;
     }
   }
@@ -515,7 +542,7 @@ wss.on('connection', ws => {
     if (p.ws !== ws) return;
     p.ws = null; p.connected = false;
     if (room.phase === 'lobby') { removeFromLobby(room, p); if (rooms.has(room.code)) broadcast(room); }
-    else { scheduleBot(room); broadcast(room); }
+    else { reassignHost(room); scheduleBot(room); broadcast(room); }
   });
 });
 

@@ -39,6 +39,9 @@ function runGame(n, mode) {
             if (total !== 52) violations.push('card count ' + total + ' stage ' + S.stage);
             if (S.event && S.event.type === 'thulla' && S.event.seq > (b.lastThulla || 0)) { b.lastThulla = S.event.seq; thullas++; }
             if (S.log) violations.push('server still sends a card log');
+            if (S.firstTrick && S.event && S.event.type === 'thulla') violations.push('Thulla in the first round');
+            if (S.firstTrick && S.plays.some(pl => pl.card.slice(-1) !== S.leadSuit && parseInt(pl.card) >= 10)) violations.push('first round: off-suit card of 10 or higher');
+            if (!S.timer && S.turn) violations.push('no move timer sent');
           }
           // a hand request is made on your own turn BEFORE you deal; the asked player then answers
           if (S.you.canRequest && !(S.stage === 'turn' && S.turn === S.you.id)) violations.push('request offered outside your own turn');

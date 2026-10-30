@@ -207,4 +207,71 @@ ok('first trick and final duel: no requests', () => {
   assert(!T2.view(d, d.players[0]).you.canRequest);
 });
 
+console.log('First round: no spade -> any card below 10');
+function firstTrick(hands) {
+  const r = table(['A', 'B', 'C'], hands, { trick: 0 });
+  r.trickNo = 0; T.newTrick(r, P(r, 'A'), true); play(r, 'A', '14S');
+  return r;
+}
+ok('no spade: only cards lower than 10 are legal (and it is NOT a Thulla)', () => {
+  const r = firstTrick([['14S', '5H'], ['9H', '10H', '13D'], ['2S', '4C']]);
+  assert.equal(r.turn, P(r, 'B').id);
+  assert.deepEqual(T.view(r, P(r, 'B')).you.legal, ['9H']);
+  play(r, 'B', '9H');
+  assert.equal(r.phase, 'playing'); assert.equal(P(r, 'B').hand.length, 2);   // 9H was just thrown, nobody picked it up
+  assert.equal(r.turn, P(r, 'C').id);
+  assert.deepEqual(T.view(r, P(r, 'C')).you.legal, ['2S']);                    // C has a spade: must follow suit
+});
+ok('a player with a spade must still follow suit in round one', () => {
+  const r = firstTrick([['14S', '5H'], ['3S', '4D'], ['2D', '4C']]);
+  assert.deepEqual(T.view(r, P(r, 'B')).you.legal, ['3S']);
+});
+ok('no spade and nothing below 10 -> that player simply passes; trick is discarded, ace holder leads', () => {
+  const r = firstTrick([['14S', '5H'], ['9H', '8D'], ['13C', '14D']]);
+  play(r, 'B', '9H');                                   // C has no spade and no card < 10 -> skipped
+  assert.equal(r.discarded, 2);                         // A♠ + 9H discarded, nothing picked up
+  assert.equal(P(r, 'C').hand.length, 2);
+  assert.equal(r.turn, P(r, 'A').id);
+});
+ok('first round: a throw below 10 is discarded with the trick (no one picks it up)', () => {
+  const r = firstTrick([['14S', '5H'], ['3S', '4D'], ['9C', '13D']]);
+  play(r, 'B', '3S'); play(r, 'C', '9C');
+  assert.equal(r.discarded, 3);
+  assert.equal(P(r, 'A').hand.length, 1); assert.equal(P(r, 'B').hand.length, 1); assert.equal(P(r, 'C').hand.length, 1);
+});
+
+console.log('One-minute move timer');
+process.env.TURN_MS = '80';
+delete require.cache[require.resolve('./server')];
+const T4 = require('./server');
+ok('timer is exposed to clients for the player to move', () => {
+  const r = T4.makeRoom(); ['A', 'B', 'C'].forEach(x => T4.addPlayer(r, fakeWs(), x));
+  [['9H', '3D', '13H'], ['2H', '5H', '7S'], ['10H', '7C']].forEach((h, i) => { r.players[i].hand = h; });
+  r.phase = 'playing'; r.stage = 'turn'; r.trickNo = 4; T4.newTrick(r, r.players[0], false);
+  const v = T4.view(r, r.players[1]);
+  assert.equal(v.timer.pid, r.players[0].id); assert(v.timer.ms > 0 && v.timer.ms <= 80);
+});
+ok('timeout: the highest card is thrown; the next player then also times out with their highest card of the led suit', () => {
+  const r = T4.makeRoom(); ['A', 'B', 'C'].forEach(x => T4.addPlayer(r, fakeWs(), x));
+  [['9H', '3D', '13H'], ['2H', '5H', '7S'], ['10H', '7C']].forEach((h, i) => { r.players[i].hand = h; });
+  r.phase = 'playing'; r.stage = 'turn'; r.trickNo = 4; T4.newTrick(r, r.players[0], false);
+  const seen = [];                                                      // record every card the server plays for the timed-out players
+  const iv = setInterval(() => { for (const pl of r.trick.plays) if (!seen.includes(pl.card)) seen.push(pl.card); }, 5);
+  return new Promise(res => setTimeout(() => {
+    clearInterval(iv);
+    // trick 1: A leads KH (highest in hand), B plays 5H (highest HEART; 7S isn't legal), C's 10H completes it (resolves instantly,
+    // so it is never visible). Trick 2: KH won, A leads 9H (highest left), B follows with 2H.
+    assert.deepEqual(seen.slice(0, 4), ['13H', '5H', '9H', '2H']);
+    assert(r.discarded >= 3);                                           // trick completed by timeouts alone
+    res();
+  }, 450));
+});
+ok('a player who moves in time is NOT auto-played', () => {
+  const r = T4.makeRoom(); ['A', 'B', 'C'].forEach(x => T4.addPlayer(r, fakeWs(), x));
+  [['9H', '3D'], ['2H', '5H'], ['10H', '7C']].forEach((h, i) => { r.players[i].hand = h; });
+  r.phase = 'playing'; r.stage = 'turn'; r.trickNo = 4; T4.newTrick(r, r.players[0], false);
+  T4.playCard(r, r.players[0], '3D');
+  return new Promise(res => setTimeout(() => { assert.equal(r.trick.plays[0].card, '3D'); res(); }, 20));
+});
+
 Promise.all(pending).then(() => { console.log(`\n${n} rule checks passed`); process.exit(0); }, e => { console.error(e); process.exit(1); });
