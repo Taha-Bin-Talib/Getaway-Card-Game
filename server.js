@@ -55,7 +55,7 @@ function makeRoom() {
   return {
     code: roomCode(), players: [], hostId: null, settings: { requestMode: 'elimination' },
     phase: 'lobby', stage: 'lobby', trick: null, trickNo: 0, discarded: 0, loserId: null,
-    seq: 0, event: null, outCounter: 0, lastActive: Date.now(),
+    seq: 0, event: null, outCounter: 0, lastActive: Date.now(), chat: [],
     turn: null, consent: null, pick: null, settle: null, lastTrick: null, fxSeq: 0,
     timer: null, gen: 0, duelSeen: false, turnUntil: 0,
   };
@@ -412,6 +412,7 @@ function addPlayer(room, ws, name) {
   if (!room.hostId) room.hostId = p.id;
   ws.ctx = { room, p };
   send(ws, { t: 'joined', code: room.code, token: p.token });
+  send(ws, { t: 'chatlog', log: room.chat });
   return p;
 }
 
@@ -426,6 +427,13 @@ function removeFromLobby(room, p) {
   room.players = room.players.filter(q => q !== p);
   if (!room.players.length) { rooms.delete(room.code); return; }
   if (room.hostId === p.id) room.hostId = room.players[0].id;
+}
+
+const REACTIONS = ['😂', '😢', '😉', '😡', '😮', '👏', '🔥', '👍'];
+function chatLimited(p) {                           // max 1 chat/reaction per 600 ms per player
+  const now = Date.now();
+  if (p.lastChat && now - p.lastChat < 600) return true;
+  p.lastChat = now; return false;
 }
 
 function handle(ws, m) {
@@ -450,6 +458,7 @@ function handle(ws, m) {
     if (p.ws && p.ws !== ws) { p.ws.ctx = null; try { p.ws.close(); } catch (e) {} }
     p.ws = ws; p.connected = true; ws.ctx = { room, p };
     send(ws, { t: 'joined', code: room.code, token: p.token });
+    send(ws, { t: 'chatlog', log: room.chat });
     return broadcast(room);
   }
   if (!ws.ctx) return;
@@ -457,6 +466,20 @@ function handle(ws, m) {
   const isHost = room.hostId === p.id;
 
   switch (m.t) {
+    case 'chat': {                                      // text chat (last 60 messages kept per room)
+      const text = String(m.text || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
+      if (!text || chatLimited(p)) return;
+      const msg = { id: p.id, name: p.name, text, ts: Date.now() };
+      room.chat.push(msg); if (room.chat.length > 60) room.chat.shift();
+      room.lastActive = Date.now();
+      for (const q of room.players) if (q.ws) send(q.ws, { t: 'chat', m: msg });
+      return;
+    }
+    case 'react': {                                     // quick emoji reaction (not stored)
+      if (!REACTIONS.includes(m.e) || chatLimited(p)) return;
+      for (const q of room.players) if (q.ws) send(q.ws, { t: 'react', pid: p.id, name: p.name, e: m.e });
+      return;
+    }
     case 'settings':
       if (!isHost || room.phase !== 'lobby') return;
       if (['off', 'elimination', 'reveal'].includes(m.requestMode)) room.settings.requestMode = m.requestMode;
@@ -558,5 +581,5 @@ if (require.main === module) {
   server.listen(PORT, () => console.log(`Thulla server running on http://localhost:${PORT}`));
 } else {
   // loaded by the rule tests: expose internals, don't open a port
-  module.exports = { makeRoom, addPlayer, startGame, newTrick, playCard, doRequest, doRespond, doPick, view, rooms, sortHand };
+  module.exports = { REACTIONS, handle, makeRoom, addPlayer, startGame, newTrick, playCard, doRequest, doRespond, doPick, view, rooms, sortHand };
 }

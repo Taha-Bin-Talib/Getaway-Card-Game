@@ -45,3 +45,6 @@ Health check URL: `/healthz`. (Note: Vercel/Netlify static/serverless hosting wi
 ## Test
 - `npm run test:rules` — deterministic rule checks (hand requests and consent, final duel branches). No server needed.
 - `PORT=3111 SETTLE_MS=0 node server.js &` then `PORT=3111 npm test` — 60 bot games across all player counts and modes.
+
+## Chat & reactions
+Tap the 💬 button in a room to chat (last 60 messages kept, 120 chars each) or send a quick reaction (😂 😢 😉 😡 😮 👏 🔥 👍) that floats up on everyone's screen.

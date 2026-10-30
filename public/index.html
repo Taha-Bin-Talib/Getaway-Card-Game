@@ -127,6 +127,28 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
   .code{font-size:2rem}
   #hand{gap:3px}
 }
+
+/* chat + reactions */
+#chatBtn{position:fixed;right:14px;bottom:14px;z-index:70;width:52px;height:52px;border-radius:50%;border:2px solid var(--gold);background:#0a3d29;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5);display:none}
+#chatBtn.on{display:block}
+#chatBtn b{position:absolute;top:-6px;right:-6px;background:#ff5252;color:#fff;border-radius:10px;font-size:12px;min-width:20px;padding:1px 5px;display:none}
+#chatBtn b.on{display:block}
+#chat{position:fixed;right:10px;bottom:76px;width:min(340px,calc(100vw - 20px));max-height:60vh;z-index:70;background:#0a3d29;border:2px solid var(--gold);border-radius:16px;display:none;flex-direction:column;box-shadow:0 8px 28px rgba(0,0,0,.6)}
+#chat.on{display:flex}
+#reacts{display:flex;gap:2px;justify-content:space-between;padding:8px 6px 4px}
+#reacts button{font-size:19px;background:rgba(255,255,255,.08);border:0;border-radius:10px;padding:4px 4px;flex:1;min-width:0;cursor:pointer;line-height:1}
+#reacts button:active{transform:scale(1.25)}
+#chatLog{flex:1;overflow-y:auto;min-height:90px;max-height:34vh;padding:6px 10px;font-size:.92rem}
+#chatLog div{margin:3px 0;word-break:break-word}
+#chatLog b{color:var(--gold)}
+#chatLog .me b{color:#9fe6b4}
+#chatForm{display:flex;gap:6px;padding:8px}
+#chatForm input{flex:1;min-width:0;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;padding:9px 10px;font-size:16px}
+#floaters{position:fixed;inset:0;pointer-events:none;z-index:65;overflow:hidden}
+.floater{position:absolute;bottom:90px;text-align:center;animation:floatUp 2.6s ease-out forwards}
+.floater i{display:block;font-style:normal;font-size:46px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.floater span{display:inline-block;background:rgba(0,0,0,.6);border-radius:10px;padding:1px 8px;font-size:.78rem;font-weight:700}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(.5)}12%{opacity:1;transform:translateY(-30px) scale(1.15)}100%{opacity:0;transform:translateY(-260px) scale(1)}}
 </style>
 </head>
 <body>
@@ -233,6 +255,15 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
   <div class="small" id="againWait"></div>
 </div></div>
 
+
+<button id="chatBtn" aria-label="Chat">💬<b id="chatBadge"></b></button>
+<div id="chat">
+  <div id="reacts"></div>
+  <div id="chatLog"></div>
+  <form id="chatForm"><input id="chatIn" maxlength="120" placeholder="Say something…" autocomplete="off"><button class="btn" type="submit">Send</button></form>
+</div>
+<div id="floaters"></div>
+
 <script>
 const $ = id => document.getElementById(id);
 const SYM = {S:'♠',H:'♥',D:'♦',C:'♣'}, RN = {11:'J',12:'Q',13:'K',14:'A'};
@@ -242,6 +273,35 @@ try { session = JSON.parse(localStorage.getItem('thulla') || 'null'); } catch(e)
 $('name').value = localStorage.getItem('thullaName') || '';
 const urlRoom = new URLSearchParams(location.search).get('room');
 if (urlRoom) $('code').value = urlRoom.toUpperCase();
+
+
+/* ---------- chat & reactions ---------- */
+const REACTS = ['😂','😢','😉','😡','😮','👏','🔥','👍'];
+let unread = 0, chatOpen = false;
+$('reacts').innerHTML = REACTS.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('');
+$('reacts').onclick = ev => { const b = ev.target.closest('button'); if (b) send({t:'react', e:b.dataset.e}); };
+function addChat(m){
+  const d = document.createElement('div');
+  if (S && m.id === S.you.id) d.className = 'me';
+  d.innerHTML = `<b>${esc(m.name)}:</b> ${esc(m.text)}`;
+  const log = $('chatLog'); log.appendChild(d);
+  while (log.children.length > 60) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+  if (!chatOpen && !(S && m.id === S.you.id)) { unread++; $('chatBadge').textContent = unread; $('chatBadge').classList.add('on'); }
+}
+function floatReact(m){
+  const f = document.createElement('div'); f.className = 'floater';
+  f.style.left = (8 + Math.random() * 70) + 'vw';
+  f.innerHTML = `<i>${m.e}</i><span>${esc(m.name)}</span>`;
+  $('floaters').appendChild(f); setTimeout(() => f.remove(), 2700);
+}
+function setChat(open){
+  chatOpen = open; $('chat').classList.toggle('on', open);
+  if (open) { unread = 0; $('chatBadge').classList.remove('on'); $('chatLog').scrollTop = 1e9; }
+}
+$('chatBtn').onclick = () => setChat(!chatOpen);
+$('chatForm').onsubmit = ev => { ev.preventDefault(); const t = $('chatIn').value.trim(); if (t) send({t:'chat', text:t}); $('chatIn').value = ''; };
+function chatVisible(on){ $('chatBtn').classList.toggle('on', on); if (!on) setChat(false); }
 
 function connect(){
   const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -254,7 +314,10 @@ function connect(){
   ws.onmessage = ev => {
     const m = JSON.parse(ev.data);
     if (m.t === 'joined') { session = {code:m.code, token:m.token}; localStorage.setItem('thulla', JSON.stringify(session)); }
-    else if (m.t === 'state') { S = m.s; render(); }
+    else if (m.t === 'state') { S = m.s; chatVisible(true); render(); }
+    else if (m.t === 'chatlog') { $('chatLog').innerHTML = ''; m.log.forEach(addChat); unread = 0; $('chatBadge').classList.remove('on'); }
+    else if (m.t === 'chat') addChat(m.m);
+    else if (m.t === 'react') floatReact(m);
     else if (m.t === 'error') showErr(m.m);
     else if (m.t === 'rejoinFail') { clearSession(); }
     else if (m.t === 'kicked') { clearSession(); showErr('You were removed from the room.'); }
@@ -264,6 +327,7 @@ function connect(){
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else queue.push(o); }
 function clearSession(){
   session = null; S = null; lastSeq = null; prevPhase = null;
+  chatVisible(false); $('chatLog').innerHTML = ''; unread = 0;
   clearTimeout(overTimer); $('over').classList.remove('on');      // the game-over popup must not stay on top of the home page
   $('toast').className = ''; $('actions').innerHTML = ''; $('reveal').style.display = 'none';
   resetTable(); localStorage.removeItem('thulla'); show('home');
