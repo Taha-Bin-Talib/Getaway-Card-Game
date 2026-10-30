@@ -21,7 +21,8 @@ Health check URL: `/healthz`. (Note: Vercel/Netlify static/serverless hosting wi
 - 52 cards, shuffled with a crypto RNG, dealt round-robin (unequal hands allowed). Aces high.
 - Everyone sits round an oval table (you at the bottom, play runs **clockwise**). Played cards are dealt onto the table in front of each seat; a finished trick sweeps into the discard pile, or to the player who picks it up after a Thulla.
 - A♠ holder opens. Must follow suit; no suit = Thulla; highest card of the led suit picks up the whole pile and leads.
-- First-round protection: opening trick can't be Thulla'd. Players with no spades pass, cards are discarded.
+- First-round protection: the opening trick can't be a Thulla. A player with no spade may throw **any card lower than 10** (if they have none, they pass). The whole trick is discarded.
+- **Move timer:** 1 minute per move. If it runs out the server plays your **highest legal card** (highest card of the suit being followed, or your highest card if you're leading; a duel pick is chosen at random). The countdown shows on your seat.
 - Normal tricks: highest card of the led suit wins, cards are discarded, winner leads (next player if the winner is out).
 - Players are out once their hand is empty after a trick resolves. Last player with cards is the Bhabhi. If everyone gets out together it's a draw.
 - **Hand request (host picks the mode in the lobby) — BEFORE you deal your card, and the other player must agree:**
@@ -36,10 +37,10 @@ Health check URL: `/healthz`. (Note: Vercel/Netlify static/serverless hosting wi
   - Last card **bigger** (wins the trick) → they are not safe: they blindly pick one card from the opponent's hand and must play it (lead it). This repeats until someone's last card loses, or someone is emptied by a pick.
   - Picking the opponent's very last card puts the opponent out and leaves the picker holding it (picker is the Bhabhi). If both players dump their last card in the same trick it's a draw. Thulla (no suit) works as normal in the duel.
 - No card log: the table, the status line and short pop-up messages show what happened.
-- Disconnected players are auto-played by the server after 4 s (including duel picks) and can rejoin by reopening the page.
+- Disconnected players are auto-played by the server after 4 s (including duel picks); if the host leaves after the game, another connected player becomes host so "Play again" still works and can rejoin by reopening the page.
 
 ## Timing (env vars, mostly for tests)
-`SETTLE_MS` (finished trick stays on the table, default 1800 / 2600 for a Thulla), `CONSENT_MS` (time the asked player has to answer a hand request, default 15000), `BOT_MS` (auto-play delay, default 4000).
+`TURN_MS` (move timer, default 60000), `SETTLE_MS` (finished trick stays on the table, default 1800 / 2600 for a Thulla), `CONSENT_MS` (time the asked player has to answer a hand request, default 15000), `BOT_MS` (auto-play delay, default 4000).
 
 ## Test
 - `npm run test:rules` — deterministic rule checks (hand requests and consent, final duel branches). No server needed.
