@@ -45,14 +45,13 @@
 </section>
 
 <section id="game" class="screen">
-  <div class="row" style="justify-content:space-between"><span class="small">Bluff</span><button class="btn ghost" data-leave style="flex:0 0 auto;padding:5px 12px">Leave</button></div>
-  <div class="seats" id="seats"></div>
-  <div class="table">
-    <div class="claim" id="claim"></div><div class="pile" id="pile"></div><div id="reveal" class="reveal" style="display:none"></div>
-    <div class="ev" id="ev"></div>
-  </div>
-  <div class="hint" id="hint"></div>
-  <div class="ctrl" id="bluffCtrl"></div>
+  <div class="gh"><div><h1 class="gt">Bluff</h1><div class="gs" id="gsub"></div></div><button class="rbtn" data-leave aria-label="Leave room">Leave</button></div>
+  <div class="chips" id="seats"></div>
+  <div class="otable"><div class="oval"><div class="center"><div class="pilewrap" id="pile"></div><div class="claimtag" id="claim"></div></div></div><div id="ring"></div></div>
+  <div class="pillrow"><span class="pill" id="ev"></span></div>
+  <div class="gpanel" id="reveal" style="display:none"></div>
+  <div class="gpanel" id="panel"><div class="gp-t" id="pt"></div><div class="gp-s" id="hint"></div><div class="ctrl" id="bluffCtrl"></div></div>
+  <div class="hand-lbl"><span class="pill">Your hand · only you</span></div>
   <div class="hand" id="hand"></div>
 </section>
 
