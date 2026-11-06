@@ -163,7 +163,7 @@ function renderBluff() {
   }
   const open = g.stage === 'open' && my, resp = g.stage === 'respond' && my;
   const max = open ? y.maxOpen : resp ? y.maxAdd : 0;
-  drawHand($('hand'), y.hand, max);
+  drawHand($('hand'), y.hand.slice().sort((a, b) => rank(a) - rank(b)), max);
   let pt = '', hint = '';
   if (open) { pt = 'Your turn to open'; hint = 'Pick 1–4 cards, name a rank, and play them face down. They don’t have to match what you say.'; }
   else if (resp) { pt = g.claim ? `${nameOf(g.claim.by)} says: ${g.claim.count} ${g.claim.name}${g.claim.count === 1 ? '' : 's'}` : 'Your turn'; hint = y.own ? 'Everyone passed — add 1–2 more cards of the same rank, or pass to throw the pile away.' : 'Call their bluff, add 1–2 more cards to the pile, or pass.'; }
