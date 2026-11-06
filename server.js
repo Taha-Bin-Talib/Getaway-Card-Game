@@ -16,7 +16,7 @@ const REQUEST_MAX_CARDS = 5;                                // a hand can only b
 const BOT_MS = Math.max(1, num(process.env.BOT_MS, 4000)); // auto-play delay for disconnected players
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png', '.txt': 'text/plain; charset=utf-8',
 };
 
 /* ---------- card helpers ---------- */
@@ -541,10 +541,15 @@ const server = http.createServer((req, res) => {
   let u = decodeURIComponent(req.url.split('?')[0]);
   if (u === '/healthz') { res.writeHead(200); return res.end('ok'); }
   if (u === '/') u = '/index.html';
+  else if (u.length > 1 && u.endsWith('/')) u = u.slice(0, -1);
+  if (!path.extname(u)) u += '.html';                        // clean URLs: /play -> play.html, /games/bluff -> games/bluff.html
   const f = path.normalize(path.join(PUB, u));
   if (!f.startsWith(PUB)) { res.writeHead(403); return res.end(); }
   fs.readFile(f, (e, d) => {
-    if (e) { res.writeHead(404); return res.end('Not found'); }
+    if (e) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end('<!doctype html><meta charset="utf-8"><title>Page not found</title><body style="font-family:system-ui;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Getaway Card Game</a></p>');
+    }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(d);
   });

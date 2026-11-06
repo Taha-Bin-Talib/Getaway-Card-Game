@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play Bhabhi Thulla Online — Free Multiplayer Card Game | Getaway Card Game</title>
+<meta name="description" content="Play Bhabhi Thulla online with 3 to 8 friends for free. Create a room, share the code and play in your browser — no download or sign-up.">
+<link rel="icon" href="data:,">
+<style>
+.sitebar{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:980px;margin:0 auto;padding:10px 16px 0;font-size:.92rem}
+.sitebar a{color:#fff;opacity:.85;text-decoration:none;font-weight:600}.sitebar a:hover{opacity:1;color:var(--gold)}
+.sitebar nav{display:flex;gap:4px 14px;flex-wrap:wrap}
+.seo{max-width:980px;margin:34px auto 0;padding:0 16px 48px;line-height:1.65}
+.seo h2{font-size:1.5rem;margin:1.6em 0 .5em}.seo h3{font-size:1.1rem;margin:1.2em 0 .3em}.seo p,.seo li{opacity:.92}.seo a{color:var(--gold)}
+.seo table{border-collapse:collapse;width:100%;font-size:.95rem}.seo th,.seo td{border:1px solid rgba(255,255,255,.18);padding:7px 10px;text-align:left}.seo th{background:rgba(0,0,0,.3)}
+:root{--felt:#0d6b45;--felt2:#06402a;--gold:#f5c542;--ink:#101418;--red:#d32f2f;--panel:rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt2) 75%) fixed;min-height:100dvh;overflow-x:hidden}
+button{font:inherit;cursor:pointer}
+.screen{display:none;max-width:980px;margin:0 auto;padding:16px}
+.screen.on{display:block}
+h1{margin:8px 0 2px;font-size:2rem;letter-spacing:.5px}
+h1 span{color:var(--gold)}
+.sub{opacity:.8;margin:0 0 18px}
+.card-panel{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px;margin-bottom:14px;backdrop-filter:blur(4px)}
+input,select{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.95);color:var(--ink);width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 160px}
+.btn{background:var(--gold);color:#222;border:0;border-radius:10px;padding:11px 16px;font-weight:700}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff}
+.btn.danger{background:#e04b4b;color:#fff}
+.err{color:#ffb4b4;min-height:1.3em;margin:6px 0 0}
+details summary{cursor:pointer;font-weight:600}
+details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
+.code{font-size:2.6rem;font-weight:800;letter-spacing:8px;color:var(--gold)}
+.plist{list-style:none;margin:0;padding:0}
+.plist li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.08);margin-bottom:6px}
+.plist .grow{flex:1}
+.tag{font-size:.72rem;background:var(--gold);color:#222;border-radius:6px;padding:2px 6px;font-weight:700}
+.small{font-size:.85rem;opacity:.8}
+
+/* ---------- cards ---------- */
+.card{--cw:64px;width:var(--cw);height:calc(var(--cw)*1.43);font-size:calc(var(--cw)*.27);background:#fff;color:var(--ink);border-radius:calc(var(--cw)*.12);position:relative;box-shadow:0 2px 6px rgba(0,0,0,.45);font-weight:700;user-select:none;flex:0 0 auto}
+.card.red{color:var(--red)}
+.card .tl,.card .br{position:absolute;line-height:1.05;text-align:center}
+.card .tl{top:.32em;left:.4em}
+.card .br{bottom:.32em;right:.4em;transform:rotate(180deg)}
+.card .mid{position:absolute;inset:0;display:grid;place-items:center;font-size:2.1em}
+.card.back{background:repeating-linear-gradient(45deg,#1e56a8 0 .45em,#173f7d .45em .9em);border:calc(var(--cw)*.07) solid #fff}
+.card.back>*{display:none}
+
+/* ---------- game screen ---------- */
+#game{max-width:1000px;padding-top:10px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.top .meta{opacity:.9;font-size:.9rem}
+#status{font-weight:700;min-height:1.6em;text-align:center;margin:30px 0 4px;font-size:1.02rem}
+#status.duel{color:var(--gold)}
+
+#stage{width:min(100%,920px,calc((100dvh - 330px)/.72));min-width:min(100%,320px);margin:0 auto;position:relative}
+#ring{position:relative;width:100%;aspect-ratio:100/72;--u:6px}
+#felt{position:absolute;left:3%;top:6%;width:94%;height:88%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 42%,#13915f 0%,#0b6a45 55%,#07492f 100%);
+  border:calc(var(--u)*1.6) solid #5a3a1f;
+  box-shadow:0 0 0 calc(var(--u)*.4) #8a5d33,inset 0 0 calc(var(--u)*7) rgba(0,0,0,.55),0 calc(var(--u)*1.6) calc(var(--u)*5) rgba(0,0,0,.55)}
+#orbit{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#orbit ellipse{fill:none;stroke:rgba(255,255,255,.28);stroke-width:2;stroke-dasharray:7 11;vector-effect:non-scaling-stroke;animation:flow 2.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-18}}
+#arrow{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;z-index:70;pointer-events:none;transition:opacity .3s}
+#arrow::after{content:"";position:absolute;left:calc(var(--u)*-2.3);top:calc(var(--u)*-2.4);border-left:calc(var(--u)*4.6) solid var(--gold);border-top:calc(var(--u)*2.4) solid transparent;border-bottom:calc(var(--u)*2.4) solid transparent;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(245,197,66,.9))}
+#arrow.thulla::after{border-left-color:#ff5a5a;filter:drop-shadow(0 0 calc(var(--u)*1.2) rgba(255,70,70,.9))}
+#pile{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+#pile .card{--cw:calc(var(--u)*9);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.72);opacity:.95}
+#pile .lbl{position:absolute;left:calc(var(--u)*-10);width:calc(var(--u)*20);top:calc(var(--u)*6.6);text-align:center;font-size:max(9px,calc(var(--u)*2.5));opacity:.75}
+#slots,#fx,#seats{position:absolute;inset:0;pointer-events:none}
+.slot{position:absolute;width:0;height:0}
+.slot .card{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
+.slot.best .card{outline:calc(var(--u)*.7) solid var(--gold);box-shadow:0 0 calc(var(--u)*3) rgba(245,197,66,.8)}
+.slot.thulla .card{outline:calc(var(--u)*.7) solid #ff6b6b;box-shadow:0 0 calc(var(--u)*3) rgba(255,80,80,.8)}
+#fx .card,.fxcard{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
+#fx .card.back{--cw:calc(var(--u)*5)}
+
+.seat{position:absolute;z-index:60;width:calc(var(--u)*22);transform:translate(-50%,-50%);text-align:center;transition:opacity .3s}
+.seat .fan{height:calc(var(--u)*6);display:flex;justify-content:center;align-items:flex-end;margin-bottom:calc(var(--u)*.4)}
+.seat .fan .card{--cw:calc(var(--u)*3.8);margin-left:calc(var(--u)*-1.9);box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.seat .fan .card:first-child{margin-left:0}
+.seat .pill{display:inline-block;max-width:100%;padding:calc(var(--u)*.7) calc(var(--u)*1.8);border-radius:calc(var(--u)*2.4);background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.18);backdrop-filter:blur(3px);position:relative}
+.seat .nm{font-weight:700;font-size:max(10px,calc(var(--u)*3.2));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(var(--u)*18)}
+.seat .ct{font-size:max(9px,calc(var(--u)*2.6));opacity:.85;line-height:1.15}
+.seat .tm{font-size:max(9px,calc(var(--u)*2.5));font-weight:800;color:#ffe9a8;line-height:1.2}
+.seat .tm.low{color:#ff8a8a}
+.seat .tbar{height:max(3px,calc(var(--u)*.7));border-radius:3px;background:rgba(255,255,255,.2);margin-top:2px;overflow:hidden}
+.seat .tbar i{display:block;height:100%;background:var(--gold);transform-origin:left;animation:shrink linear forwards}
+.seat .tm.low~.tbar i{background:#ff6b6b}
+.seat.you .pill{border-color:rgba(245,197,66,.55)}
+.seat.turn .pill{border-color:var(--gold);box-shadow:0 0 calc(var(--u)*3.5) rgba(245,197,66,.85);animation:pulse 1.2s ease-in-out infinite}
+.seat.out{opacity:.5}
+.seat.out .fan{visibility:hidden}
+.seat .off{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#e04b4b;border:1px solid #fff}
+@keyframes pulse{50%{box-shadow:0 0 calc(var(--u)*1.5) rgba(245,197,66,.4)}}
+
+#actions{min-height:8px;margin:6px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.box{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 14px;text-align:center;max-width:100%}
+.box .msg{font-weight:700;margin-bottom:8px}
+.box .row{justify-content:center}
+.box .row>*{flex:0 1 auto}
+.bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin-top:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left;animation:shrink linear forwards}
+@keyframes shrink{to{transform:scaleX(0)}}
+.backs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:560px}
+.backs .card{--cw:46px;cursor:pointer;transition:transform .12s;padding:0}
+.backs .card:hover{transform:translateY(-8px) rotate(-3deg);outline:3px solid var(--gold)}
+#reveal{background:rgba(0,0,0,.35);border-radius:12px;padding:8px 10px;display:none;text-align:center}
+#reveal .cards{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px}
+#reveal .card{--cw:44px}
+#hand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 4px 18px}
+#hand .card{--cw:clamp(48px,12.5vw,72px);transition:transform .12s}
+#hand .card.legal{cursor:pointer;transform:translateY(-8px)}
+#hand .card.legal:hover{transform:translateY(-16px)}
+#hand .card.dim{opacity:.5;filter:grayscale(.5)}
+
+#toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-120px);background:var(--gold);color:#222;font-weight:800;padding:12px 22px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.5);transition:transform .3s;z-index:50;max-width:92vw;text-align:center}
+#toast.show{transform:translate(-50%,0)}
+#toast.thulla{background:#ff5252;color:#fff}
+#toast.duel{background:#2a1a5e;color:#fff;border:2px solid var(--gold)}
+#over{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;place-items:center;z-index:40;padding:16px}
+#over.on{display:grid}
+#over .box2{background:#0a3d29;border:2px solid var(--gold);border-radius:18px;padding:22px;max-width:420px;width:100%;text-align:center}
+#over h2{margin:0 0 8px;font-size:1.7rem}
+#over ol{text-align:left;padding-left:26px;margin:10px 0 16px}
+#conn{position:fixed;bottom:0;left:0;right:0;background:#b71c1c;text-align:center;padding:6px;display:none;z-index:60;font-size:.9rem}
+@media(max-width:560px){
+  .code{font-size:2rem}
+  #hand{gap:3px}
+}
+
+/* chat + reactions */
+#chatBtn{position:fixed;right:14px;bottom:14px;z-index:70;width:52px;height:52px;border-radius:50%;border:2px solid var(--gold);background:#0a3d29;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5);display:none}
+#chatBtn.on{display:block}
+#chatBtn b{position:absolute;top:-6px;right:-6px;background:#ff5252;color:#fff;border-radius:10px;font-size:12px;min-width:20px;padding:1px 5px;display:none}
+#chatBtn b.on{display:block}
+#chat{position:fixed;right:10px;bottom:76px;width:min(340px,calc(100vw - 20px));max-height:60vh;z-index:70;background:#0a3d29;border:2px solid var(--gold);border-radius:16px;display:none;flex-direction:column;box-shadow:0 8px 28px rgba(0,0,0,.6)}
+#chat.on{display:flex}
+#reacts{display:flex;gap:2px;justify-content:space-between;padding:8px 6px 4px}
+#reacts button{font-size:19px;background:rgba(255,255,255,.08);border:0;border-radius:10px;padding:4px 4px;flex:1;min-width:0;cursor:pointer;line-height:1}
+#reacts button:active{transform:scale(1.25)}
+#chatLog{flex:1;overflow-y:auto;min-height:90px;max-height:34vh;padding:6px 10px;font-size:.92rem}
+#chatLog div{margin:3px 0;word-break:break-word}
+#chatLog b{color:var(--gold)}
+#chatLog .me b{color:#9fe6b4}
+#chatForm{display:flex;gap:6px;padding:8px}
+#chatForm input{flex:1;min-width:0;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;padding:9px 10px;font-size:16px}
+#floaters{position:fixed;inset:0;pointer-events:none;z-index:65;overflow:hidden}
+.floater{position:absolute;bottom:90px;text-align:center;animation:floatUp 2.6s ease-out forwards}
+.floater i{display:block;font-style:normal;font-size:46px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.floater span{display:inline-block;background:rgba(0,0,0,.6);border-radius:10px;padding:1px 8px;font-size:.78rem;font-weight:700}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(.5)}12%{opacity:1;transform:translateY(-30px) scale(1.15)}100%{opacity:0;transform:translateY(-260px) scale(1)}}
+</style>
+</head>
+<body>
+
+<div class="sitebar"><a href="/">&larr; Getaway Card Game</a><nav><a href="/games/bhabhi-thulla">Thulla guide</a><a href="/games/bluff">Bluff</a><a href="/games/jack-thief">Jack Thief</a><a href="/blog">Blog</a></nav></div>
+<div id="conn">Reconnecting…</div>
+<div id="toast"></div>
+
+<!-- HOME -->
+<section id="home" class="screen on">
+  <h1>Bhabhi <span>Thulla</span></h1>
+  <p class="sub">The classic South Asian card game — play online with 3 to 8 friends.</p>
+  <div class="card-panel">
+    <label class="small">Your name</label>
+    <input id="name" maxlength="16" placeholder="e.g. Saad" autocomplete="nickname">
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="create">Create a room</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <input id="code" maxlength="4" placeholder="Room code" style="text-transform:uppercase;letter-spacing:4px;font-weight:700">
+      <button class="btn ghost" id="join">Join room</button>
+    </div>
+    <div class="err" id="homeErr"></div>
+  </div>
+  <div class="card-panel">
+    <details>
+      <summary>How to play</summary>
+      <ul>
+        <li>Everyone sits around an oval table and the 52-card deck is dealt out. Aces are high. The holder of <b>A♠</b> opens the game.</li>
+        <li>Play goes <b>clockwise</b> around the table. You must <b>follow the suit</b> that was led.</li>
+        <li>If you can't follow suit, play any card — that's a <b>Thulla</b>. The trick stops and the player with the <b>highest card of the led suit</b> picks up every card on the table and leads next.</li>
+        <li>If everyone follows suit, the highest card wins the trick, the cards are discarded and the winner leads.</li>
+        <li><b>First-round protection:</b> in the opening trick nobody can Thulla. If you have no spades you may throw <b>any card lower than 10</b> (if you have none, you pass), and the cards are discarded.</li>
+        <li><b>Move timer:</b> you have <b>1 minute</b> per move. If you run out of time, your highest card of the suit being followed is played for you.</li>
+        <li><b>Request rule:</b> on your turn, <i>before</i> you deal your card (from trick 2), you may ask the next player for their whole hand — but only if they have <b>fewer than 5 cards</b>. They are asked and can <b>agree or refuse</b>. In <i>Elimination</i> mode, if they agree they hand over every card and are out; in <i>Reveal</i> mode you just look at it. Once per turn.</li>
+        <li><b>Final duel:</b> when only two players are left, if a player's <b>last card is smaller</b> than the other's they are safe and the game ends. If their <b>last card is bigger</b>, they must pick one of the other player's cards (blind), and play it. This repeats until one player gets rid of their cards.</li>
+        <li>Get rid of all your cards to be safe. The last player holding cards is the <b>Bhabhi</b>.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- LOBBY -->
+<section id="lobby" class="screen">
+  <h1>Waiting room</h1>
+  <div class="card-panel" style="text-align:center">
+    <div class="small">Room code</div>
+    <div class="code" id="lobbyCode">----</div>
+    <div class="row" style="justify-content:center;margin-top:8px">
+      <button class="btn ghost" id="copyLink" style="flex:0 1 auto">Copy invite link</button>
+    </div>
+  </div>
+  <div class="card-panel">
+    <h3 style="margin-top:0">Players (<span id="pcount">0</span>/8)</h3>
+    <ul class="plist" id="lobbyPlayers"></ul>
+    <div class="small">Need 3–8 players. Cards are dealt randomly when the host starts.</div>
+  </div>
+  <div class="card-panel">
+    <h3 style="margin-top:0">Hand-request rule (before you play)</h3>
+    <select id="reqMode">
+      <option value="elimination">Elimination &amp; transfer — if the asked player agrees, they hand over all cards and are out</option>
+      <option value="reveal">Reveal only — if the asked player agrees, the requester just sees their hand</option>
+      <option value="off">Off — no hand requests</option>
+    </select>
+    <div class="small" id="reqModeRO" style="display:none"></div>
+  </div>
+  <div class="row">
+    <button class="btn" id="start">Start game</button>
+    <button class="btn ghost" id="leaveLobby">Leave</button>
+  </div>
+  <div class="err" id="lobbyErr"></div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen">
+  <div class="top">
+    <div class="meta">Room <b id="gCode"></b> · Trick <b id="gTrick"></b></div>
+    <button class="btn ghost" id="leaveGame">Leave</button>
+  </div>
+  <div id="stage">
+    <div id="ring">
+      <div id="felt"></div>
+      <svg id="orbit" viewBox="0 0 100 72" preserveAspectRatio="none"><ellipse cx="50" cy="36" rx="35" ry="23.5"/></svg>
+      <div id="pile"></div>
+      <div id="arrow"></div>
+      <div id="slots"></div>
+      <div id="seats"></div>
+      <div id="fx"></div>
+    </div>
+  </div>
+  <div id="status"></div>
+  <div id="actions"></div>
+  <div id="reveal"></div>
+  <div id="hand"></div>
+</section>
+
+<div id="over"><div class="box2">
+  <h2 id="overTitle"></h2>
+  <div class="small">Order of getting out</div>
+  <ol id="overList"></ol>
+  <div class="row" style="justify-content:center">
+    <button class="btn" id="again">Play again</button>
+    <button class="btn ghost" id="overLeave">Leave</button>
+  </div>
+  <div class="small" id="againWait"></div>
+</div></div>
+
+
+<button id="chatBtn" aria-label="Chat">💬<b id="chatBadge"></b></button>
+<div id="chat">
+  <div id="reacts"></div>
+  <div id="chatLog"></div>
+  <form id="chatForm"><input id="chatIn" maxlength="120" placeholder="Say something…" autocomplete="off"><button class="btn" type="submit">Send</button></form>
+</div>
+<div id="floaters"></div>
+
+<section class="seo" id="about-game">
+<h2>About Bhabhi Thulla online</h2>
+<p>Bhabhi Thulla is a South Asian shedding card game for three to eight players. The whole 52-card deck is dealt out, the holder of the Ace of Spades opens, and everyone must follow the suit that was led. The aim is simple: get rid of all your cards. The last player still holding cards is the <strong>Bhabhi</strong>. This page lets you play it in real time with friends, wherever they are, directly in your browser.</p>
+<p>The twist is the <strong>Thulla</strong>. When you cannot follow suit you may throw any card, and the player who is winning the trick picks up every card on the table and leads next. It is a game of memory, patience and well-timed cruelty. Read the <a href="/games/bhabhi-thulla">full rules and strategy guide</a> for a detailed walk-through, or try our other games' guides for <a href="/games/bluff">Bluff</a> and <a href="/games/jack-thief">Jack Thief</a>.</p>
+<h2>Features</h2>
+<ul>
+<li><strong>Rooms for 3 to 8 players</strong> with a four-letter code and a one-tap invite link.</li>
+<li><strong>Oval table</strong> with larger cards; you sit at the bottom and play runs clockwise.</li>
+<li><strong>Server-side fair shuffle</strong> using a cryptographic random number generator and full rule enforcement.</li>
+<li><strong>One-minute move timer</strong> so a slow player cannot hold up the table. If time runs out, your highest legal card is played.</li>
+<li><strong>Room chat and quick emoji reactions</strong> that float over the table.</li>
+<li><strong>Hand requests</strong> (optional, chosen by the host): ask the next player for their hand when they hold fewer than five cards, and they may agree or refuse.</li>
+<li><strong>Final duel</strong> when two players remain, decided by each player's last card.</li>
+<li><strong>Automatic play for dropped players</strong>, so a lost connection never ends the game, and you can rejoin by reopening the page.</li>
+</ul>
+<h2>Controls</h2>
+<table>
+<tr><th>Action</th><th>How</th></tr>
+<tr><td>Create or join a room</td><td>Enter your name, then press <em>Create a room</em>, or type a friend's four-letter code and press <em>Join room</em>.</td></tr>
+<tr><td>Invite friends</td><td>In the waiting room press <em>Copy invite link</em> and send it, or read out the room code.</td></tr>
+<tr><td>Play a card</td><td>Tap or click a card in your hand when it is your turn. Cards you are not allowed to play are dimmed.</td></tr>
+<tr><td>Request a hand</td><td>Before you play, if the option is available, use the request button; the other player gets to agree or refuse.</td></tr>
+<tr><td>Chat and react</td><td>Open the chat panel to type a message, or tap an emoji to send a reaction to the whole table.</td></tr>
+</table>
+<h2>Tips for your first game</h2>
+<p>Follow suit whenever you can and try to play the highest card that is still lower than the current winner: you shed a strong card without taking any risk. When you are forced to lead, play a low card from a long suit. Watch who cannot follow suit, because that player will throw a Thulla the moment you win a trick in that suit. The <a href="/games/bhabhi-thulla#strategy">strategy section of the guide</a> goes into much more detail.</p>
+<p class="small" style="opacity:.7"><a href="/">Home</a> · <a href="/blog">Blog</a> · <a href="/about">About</a> · <a href="/privacy">Privacy policy</a></p>
+</section>
+<script>
+const $ = id => document.getElementById(id);
+const SYM = {S:'♠',H:'♥',D:'♦',C:'♣'}, RN = {11:'J',12:'Q',13:'K',14:'A'};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ws, S = null, prevPhase = null, session = null, queue = [], lastSeq = null, toastTimer;
+try { session = JSON.parse(localStorage.getItem('thulla') || 'null'); } catch(e){}
+$('name').value = localStorage.getItem('thullaName') || '';
+const urlRoom = new URLSearchParams(location.search).get('room');
+if (urlRoom) $('code').value = urlRoom.toUpperCase();
+
+
+/* ---------- chat & reactions ---------- */
+const REACTS = ['😂','😢','😉','😡','😮','👏','🔥','👍'];
+let unread = 0, chatOpen = false;
+$('reacts').innerHTML = REACTS.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('');
+$('reacts').onclick = ev => { const b = ev.target.closest('button'); if (b) send({t:'react', e:b.dataset.e}); };
+function addChat(m){
+  const d = document.createElement('div');
+  if (S && m.id === S.you.id) d.className = 'me';
+  d.innerHTML = `<b>${esc(m.name)}:</b> ${esc(m.text)}`;
+  const log = $('chatLog'); log.appendChild(d);
+  while (log.children.length > 60) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+  if (!chatOpen && !(S && m.id === S.you.id)) { unread++; $('chatBadge').textContent = unread; $('chatBadge').classList.add('on'); }
+}
+function floatReact(m){
+  const f = document.createElement('div'); f.className = 'floater';
+  f.style.left = (8 + Math.random() * 70) + 'vw';
+  f.innerHTML = `<i>${m.e}</i><span>${esc(m.name)}</span>`;
+  $('floaters').appendChild(f); setTimeout(() => f.remove(), 2700);
+}
+function setChat(open){
+  chatOpen = open; $('chat').classList.toggle('on', open);
+  if (open) { unread = 0; $('chatBadge').classList.remove('on'); $('chatLog').scrollTop = 1e9; }
+}
+$('chatBtn').onclick = () => setChat(!chatOpen);
+$('chatForm').onsubmit = ev => { ev.preventDefault(); const t = $('chatIn').value.trim(); if (t) send({t:'chat', text:t}); $('chatIn').value = ''; };
+function chatVisible(on){ $('chatBtn').classList.toggle('on', on); if (!on) setChat(false); }
+
+function connect(){
+  const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+  ws = new WebSocket(proto + location.host);
+  ws.onopen = () => {
+    $('conn').style.display = 'none';
+    if (queue.length) { queue.forEach(m => ws.send(JSON.stringify(m))); queue = []; }
+    else if (session) ws.send(JSON.stringify({t:'rejoin', code:session.code, token:session.token}));
+  };
+  ws.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.t === 'joined') { session = {code:m.code, token:m.token}; localStorage.setItem('thulla', JSON.stringify(session)); }
+    else if (m.t === 'state') { S = m.s; chatVisible(true); render(); }
+    else if (m.t === 'chatlog') { $('chatLog').innerHTML = ''; m.log.forEach(addChat); unread = 0; $('chatBadge').classList.remove('on'); }
+    else if (m.t === 'chat') addChat(m.m);
+    else if (m.t === 'react') floatReact(m);
+    else if (m.t === 'error') showErr(m.m);
+    else if (m.t === 'rejoinFail') { clearSession(); }
+    else if (m.t === 'kicked') { clearSession(); showErr('You were removed from the room.'); }
+  };
+  ws.onclose = () => { $('conn').style.display = 'block'; setTimeout(connect, 1500); };
+}
+function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else queue.push(o); }
+function clearSession(){
+  session = null; S = null; lastSeq = null; prevPhase = null;
+  chatVisible(false); $('chatLog').innerHTML = ''; unread = 0;
+  clearTimeout(overTimer); $('over').classList.remove('on');      // the game-over popup must not stay on top of the home page
+  $('toast').className = ''; $('actions').innerHTML = ''; $('reveal').style.display = 'none';
+  resetTable(); localStorage.removeItem('thulla'); show('home');
+}
+function showErr(msg){
+  ['homeErr','lobbyErr'].forEach(id => $(id).textContent = msg);
+  toast(msg, '');
+}
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+function toast(text, cls){
+  const t = $('toast'); t.textContent = text; t.className = 'show ' + (cls||'');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', 2800);
+}
+
+/* ---------- home / lobby actions ---------- */
+function getName(){ const n = $('name').value.trim(); localStorage.setItem('thullaName', n); return n || 'Player'; }
+$('create').onclick = () => { $('homeErr').textContent=''; send({t:'create', name:getName()}); };
+$('join').onclick = () => {
+  const c = $('code').value.trim().toUpperCase();
+  if (c.length !== 4) return $('homeErr').textContent = 'Enter the 4-letter room code.';
+  $('homeErr').textContent=''; send({t:'join', code:c, name:getName()});
+};
+$('copyLink').onclick = () => {
+  const link = location.origin + location.pathname + '?room=' + S.code;
+  navigator.clipboard.writeText(link).then(() => toast('Invite link copied!'), () => prompt('Copy this link:', link));
+};
+$('reqMode').onchange = e => send({t:'settings', requestMode:e.target.value});
+$('start').onclick = () => send({t:'start'});
+$('leaveLobby').onclick = () => { send({t:'leave'}); clearSession(); };
+$('leaveGame').onclick = () => { if (confirm('Leave the game? A bot will auto-play your cards.')) { send({t:'leave'}); clearSession(); } };
+$('overLeave').onclick = () => { send({t:'leave'}); clearSession(); };
+$('again').onclick = () => send({t:'rematch'});
+
+const MODE_TXT = {elimination:'Elimination & transfer', reveal:'Reveal only', off:'Off'};
+
+/* ---------- cards ---------- */
+function cardEl(id, cls){
+  const d = document.createElement('div');
+  if (id === 'back') { d.className = 'card back ' + (cls||''); return d; }
+  const r = parseInt(id), s = id.slice(-1), l = RN[r] || r;
+  d.className = 'card ' + (s==='H'||s==='D' ? 'red ' : '') + (cls||'');
+  d.innerHTML = `<span class="tl">${l}<br>${SYM[s]}</span><span class="mid">${SYM[s]}</span><span class="br">${l}<br>${SYM[s]}</span>`;
+  d.dataset.id = id;
+  return d;
+}
+const nameOf = id => (S.players.find(p => p.id === id) || {}).name || '?';
+
+/* ---------- round-table geometry ----------
+   Seats are spread evenly round a circle, you at the bottom, play order running CLOCKWISE
+   (screen angles grow clockwise because y points down). Everything is in % of the ring's width. */
+const ring = $('ring');
+const RH = 72, CY = 36;                         // ring is 100 wide x 72 high (units = % of width): an oval table
+const SEAT = {x: 42, y: 29.5}, CARD = {x: 26, y: 16.5}, ARROW = {x: 36.5, y: 25.5};
+let geo = {}, mySeat = 0, ringW = 600;
+const polar = (deg, E, k = 1) => { const a = deg*Math.PI/180; return {x: 50 + E.x*k*Math.cos(a), y: CY + E.y*k*Math.sin(a)}; };
+function fit(){
+  ringW = ring.clientWidth || 600;
+  ring.style.setProperty('--u', (ringW/100) + 'px');
+}
+window.addEventListener('resize', () => { if (S && S.phase !== 'lobby') { fit(); renderTable(); } });
+function computeGeo(){
+  const n = S.players.length;
+  mySeat = Math.max(0, S.players.findIndex(p => p.id === S.you.id));
+  geo = {};
+  S.players.forEach((p, i) => { geo[p.id] = { ang: 90 + (i - mySeat) * 360 / n, i }; });
+}
+const place = (el, pt) => { el.style.left = pt.x + '%'; el.style.top = (pt.y / RH * 100) + '%'; };
+const jitter = (str) => { let h = 0; for (const ch of str) h = (h*31 + ch.charCodeAt(0)) | 0; return ((h % 17) - 8); };
+const slotRot = (pid, card) => (geo[pid].ang - 90) * .3 + jitter(card);
+
+/* ---------- table rendering ---------- */
+const slotEls = new Map();         // card id -> .slot element currently on the table
+let arrowAng = null, sweepSeen = undefined, dealing = 0, overTimer = null;
+
+function resetTable(){
+  slotEls.forEach(el => el.remove()); slotEls.clear();
+  $('fx').innerHTML = ''; $('seats').innerHTML = ''; $('pile').innerHTML = '';
+  cancelAnimationFrame(arrowRaf); arrowAng = null; sweepSeen = undefined; actionsKey = '';
+  clearTimeout(overTimer);
+}
+
+function renderSeats(){
+  const seats = $('seats'); seats.innerHTML = '';
+  S.players.forEach(p => {
+    const g = geo[p.id], pt = polar(g.ang, SEAT), me = p.id === S.you.id;
+    const d = document.createElement('div');
+    const active = p.id === S.turn || (S.consent && S.consent.targetId === p.id) || (S.pick && S.pick.pid === p.id);
+    d.className = 'seat' + (active ? ' turn' : '') + (p.out ? ' out' : '') + (me ? ' you' : '');
+    place(d, pt);
+    let fan = '';
+    if (!me && !p.out && p.count > 0) {
+      const k = Math.min(p.count, 6);
+      for (let j = 0; j < k; j++) fan += `<div class="card back" style="transform:rotate(${(j-(k-1)/2)*9}deg)"></div>`;
+    }
+    d.innerHTML = `<div class="fan">${fan}</div><div class="pill">${p.connected?'':'<span class="off" title="Disconnected"></span>'}<div class="nm">${esc(p.name)}</div><div class="ct">${me?'You · ':''}${p.out?'OUT ✔ #'+p.place:p.count+(p.count===1?' card':' cards')}</div>${S.timer && S.timer.pid === p.id ? `<div class="tm" data-end="${Date.now() + S.timer.ms}">⏱</div><div class="tbar"><i style="animation-duration:${Math.max(100, S.timer.ms)}ms"></i></div>` : ''}</div>`;
+    seats.appendChild(d);
+  });
+}
+
+function renderPile(){
+  const pile = $('pile'); pile.innerHTML = '';
+  const n = S.discarded;
+  if (n > 0) {
+    const layers = Math.min(3, 1 + Math.floor(n / 8));
+    for (let i = 0; i < layers; i++) {
+      const c = cardEl('back'); c.style.transform = `translate(${(i-1)*2}px,${-i*2}px) rotate(${(i-1)*7}deg)`; pile.appendChild(c);
+    }
+    pile.insertAdjacentHTML('beforeend', `<div class="lbl">${n} discarded</div>`);
+  }
+}
+
+function renderPlays(){
+  const keep = new Set();
+  let best = null;
+  S.plays.forEach(pl => { if (pl.card.slice(-1)===S.leadSuit && (!best || parseInt(pl.card)>parseInt(best.card))) best = pl; });
+  S.plays.forEach((pl, k) => {
+    keep.add(pl.card);
+    const off = pl.card.slice(-1) !== S.leadSuit && !S.firstTrick;   // the first round is never a Thulla
+    let el = slotEls.get(pl.card);
+    const dest = polar(geo[pl.pid].ang, CARD), rot = slotRot(pl.pid, pl.card);
+    if (!el) {                                             // a card has just been dealt onto the table
+      el = document.createElement('div'); el.className = 'slot';
+      el.appendChild(cardEl(pl.card));
+      place(el, dest); el.style.transform = `rotate(${rot}deg)`; el.style.zIndex = 10 + k;
+      $('slots').appendChild(el); slotEls.set(pl.card, el);
+      const from = polar(geo[pl.pid].ang, SEAT, 1.1);
+      const dx = (from.x - dest.x) * ringW / 100, dy = (from.y - dest.y) * ringW / 100;
+      if (el.animate) el.animate([
+        { transform: `translate(${dx}px,${dy}px) rotate(${rot - 140}deg) scale(.55)`, opacity: 0 },
+        { transform: `translate(${dx*.25}px,${dy*.25}px) rotate(${rot - 20}deg) scale(1.08)`, opacity: 1, offset: .7 },
+        { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 }
+      ], { duration: 520, delay: dealing ? 1500 : 0, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' });
+    }
+    el.classList.toggle('best', best === pl);
+    el.classList.toggle('thulla', off);
+  });
+  slotEls.forEach((el, id) => { if (!keep.has(id)) { el.remove(); slotEls.delete(id); } });
+}
+
+/* finished trick leaves the table: into the discard pile, or (Thulla) to whoever picks it up */
+function sweep(lt){
+  const toSeat = lt.toId && geo[lt.toId];
+  const target = toSeat ? polar(geo[lt.toId].ang, SEAT) : {x: 50, y: CY};
+  lt.plays.forEach((pl, k) => {
+    if (!geo[pl.pid]) return;
+    const from = polar(geo[pl.pid].ang, CARD), rot = slotRot(pl.pid, pl.card);
+    const g = document.createElement('div'); g.className = 'slot'; g.appendChild(cardEl(pl.card));
+    place(g, from); g.style.transform = `rotate(${rot}deg)`;
+    $('fx').appendChild(g);
+    const dx = (target.x - from.x) * ringW / 100, dy = (target.y - from.y) * ringW / 100;
+    if (!g.animate) return g.remove();
+    const a = g.animate([
+      { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${dx}px,${dy}px) rotate(${rot + (toSeat?40:120)}deg) scale(${toSeat?.5:.5})`, opacity: toSeat ? .2 : 0 }
+    ], { duration: 650, delay: k * 55, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'both' });
+    a.onfinish = () => g.remove();
+  });
+}
+
+/* opening deal: cards spin out one at a time round the table */
+function dealAnim(){
+  const n = S.players.length, rounds = Math.min(5, Math.ceil(52 / n));
+  let k = 0;
+  dealing = 1; setTimeout(() => { dealing = 0; }, 2200);
+  for (let r = 0; r < rounds; r++) for (let i = 0; i < n; i++, k++) {
+    const p = S.players[i], to = polar(geo[p.id].ang, SEAT, .96);
+    const c = cardEl('back'); const w = document.createElement('div'); w.className = 'slot';
+    place(w, {x:50, y:CY}); w.appendChild(c); $('fx').appendChild(w);
+    const dx = (to.x - 50) * ringW / 100, dy = (to.y - CY) * ringW / 100;
+    if (!w.animate) { w.remove(); continue; }
+    const a = w.animate([
+      { transform: 'translate(0,0) rotate(0deg) scale(.7)', opacity: 0 },
+      { opacity: 1, offset: .15 },
+      { transform: `translate(${dx}px,${dy}px) rotate(${360 + geo[p.id].ang}deg) scale(.8)`, opacity: .0 }
+    ], { duration: 520, delay: k * 32, easing: 'ease-in', fill: 'both' });
+    a.onfinish = () => w.remove();
+  }
+}
+
+/* the gold arrow glides ROUND the oval to whoever has to act (clockwise) */
+let arrowRaf = 0;
+function drawArrow(deg){
+  const a = $('arrow'), r = deg*Math.PI/180, pt = polar(deg, ARROW);
+  a.style.left = pt.x + '%'; a.style.top = (pt.y / RH * 100) + '%';
+  const out = Math.atan2(Math.sin(r)/ARROW.y, Math.cos(r)/ARROW.x) * 180 / Math.PI;   // outward normal of the ellipse
+  a.style.transform = `rotate(${out}deg)`;
+}
+function pointer(){
+  const a = $('arrow');
+  const pid = S.turn || (S.consent && S.consent.targetId) || (S.pick && S.pick.pid) || (S.settle && S.settle.bestPid) || null;
+  if (!pid || !geo[pid] || S.phase === 'over') { a.style.opacity = 0; return; }
+  const target = geo[pid].ang;
+  a.style.opacity = 1;
+  a.classList.toggle('thulla', !!(S.settle && S.settle.kind === 'thulla'));
+  if (arrowAng === null) { arrowAng = target; drawArrow(arrowAng); return; }
+  const cw = (((target - arrowAng) % 360) + 360) % 360;       // clockwise distance
+  const end = arrowAng + (cw <= 200 ? cw : cw - 360);
+  if (Math.abs(end - arrowAng) < .01) { drawArrow(arrowAng); return; }
+  cancelAnimationFrame(arrowRaf);
+  const start = arrowAng, t0 = performance.now(), dur = 700;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    arrowAng = start + (end - start) * e; drawArrow(arrowAng);
+    if (k < 1) arrowRaf = requestAnimationFrame(step);
+  };
+  arrowRaf = requestAnimationFrame(step);
+}
+
+function renderTable(){
+  computeGeo();
+  renderSeats(); renderPlays(); renderPile(); pointer();
+}
+
+/* ---------- action area: request BEFORE you deal / answer a request / blind pick in the final duel ---------- */
+let actionsKey = '';
+function renderActions(){
+  const box = $('actions'), you = S.you;
+  let key = '';
+  if (S.phase === 'playing') {
+    if (you.mustAnswer && S.consent) key = 'ans:' + S.trickNo + ':' + S.consent.pid;
+    else if (you.mustPick && S.pick) key = 'pick:' + S.trickNo;
+    else if (S.stage === 'turn' && S.turn === you.id && you.canRequest) key = 'req:' + S.trickNo + ':' + S.plays.length + ':' + you.requestTarget;
+  }
+  if (key === actionsKey) return;
+  actionsKey = key; box.innerHTML = '';
+  const elim = S.settings.requestMode === 'elimination';
+  if (key.startsWith('req')) {
+    const d = document.createElement('div'); d.className = 'box';
+    d.innerHTML = `<div class="row"><button class="btn danger" id="reqBtn">🃏 Request ${esc(you.requestTarget)}'s ${elim ? 'cards' : 'hand'}</button></div><div class="small" style="margin-top:6px">Optional — ask before you deal. ${esc(you.requestTarget)} can say no.</div>`;
+    box.appendChild(d);
+    $('reqBtn').onclick = () => send({t:'request'});
+  } else if (key.startsWith('ans')) {
+    const from = nameOf(S.consent.pid);
+    const d = document.createElement('div'); d.className = 'box';
+    d.innerHTML = `<div class="msg">🃏 ${esc(from)} is asking for ${elim ? 'all your cards' : 'a look at your hand'}. ${elim ? 'Give them away? (You would be out of the game.)' : 'Show it?'}</div>
+      <div class="row"><button class="btn" id="yesBtn">${elim ? 'Give my cards' : 'Show my hand'}</button><button class="btn ghost" id="noBtn">Keep them</button></div>
+      <div class="bar"><i style="animation-duration:${Math.max(200, S.consent.ms)}ms"></i></div>`;
+    box.appendChild(d);
+    $('yesBtn').onclick = () => send({t:'respond', accept:true});
+    $('noBtn').onclick = () => send({t:'respond', accept:false});
+  } else if (key.startsWith('pick')) {
+    const from = nameOf(S.pick.fromId);
+    const d = document.createElement('div'); d.className = 'box';
+    d.innerHTML = `<div class="msg">⚔ Your last card won! Pick one of ${esc(from)}'s cards — you must play it.</div><div class="backs"></div>`;
+    for (let i = 0; i < S.pick.n; i++) {
+      const b = cardEl('back'); b.title = 'Pick this card'; b.onclick = () => send({t:'pick', i});
+      d.querySelector('.backs').appendChild(b);
+    }
+    box.appendChild(d);
+  }
+}
+
+/* ---------- screens ---------- */
+function render(){
+  if (!S) return;
+  if (S.phase === 'lobby') { show('lobby'); renderLobby(); $('over').classList.remove('on'); resetTable(); }
+  else { show('game'); renderGame(); }
+  prevPhase = S.phase;
+  handleEvent();
+}
+
+function renderLobby(){
+  const isHost = S.hostId === S.you.id;
+  $('lobbyCode').textContent = S.code;
+  $('pcount').textContent = S.players.length;
+  const ul = $('lobbyPlayers'); ul.innerHTML = '';
+  S.players.forEach(p => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="grow">${esc(p.name)}${p.id===S.you.id?' (you)':''}</span>${p.id===S.hostId?'<span class="tag">HOST</span>':''}`;
+    if (isHost && p.id !== S.you.id) {
+      const b = document.createElement('button'); b.className='btn ghost'; b.textContent='Kick'; b.style.padding='4px 10px';
+      b.onclick = () => send({t:'kick', id:p.id}); li.appendChild(b);
+    }
+    ul.appendChild(li);
+  });
+  $('reqMode').value = S.settings.requestMode;
+  $('reqMode').style.display = isHost ? '' : 'none';
+  $('reqModeRO').style.display = isHost ? 'none' : '';
+  $('reqModeRO').textContent = 'Host chose: ' + MODE_TXT[S.settings.requestMode];
+  $('start').style.display = isHost ? '' : 'none';
+  $('start').disabled = S.players.length < 3;
+  $('start').textContent = S.players.length < 3 ? `Need ${3 - S.players.length} more player(s)` : 'Start game';
+}
+
+function statusText(){
+  const you = S.you, myTurn = S.turn === you.id;
+  if (S.phase === 'over') return 'Game over';
+  if (S.settle) return S.settle.text;
+  if (S.stage === 'consent') {
+    if (you.mustAnswer) return `🃏 ${esc(nameOf(S.consent.pid))} is asking for your ${S.settings.requestMode === 'elimination' ? 'cards' : 'hand'} — your call`;
+    if (S.consent.pid === you.id) return `Waiting for ${esc(nameOf(S.consent.targetId))} to answer…`;
+    return `${esc(nameOf(S.consent.pid))} asked ${esc(nameOf(S.consent.targetId))} for their hand…`;
+  }
+  if (S.stage === 'pick') return you.mustPick ? `⚔ Pick a card from ${esc(nameOf(S.pick.fromId))}` : `⚔ ${esc(nameOf(S.pick.pid))} is picking a card from ${esc(nameOf(S.pick.fromId))}…`;
+  if (myTurn) {
+    if (you.canRequest) return `🎯 Your turn — request ${esc(you.requestTarget)}'s hand first, or deal a card`;
+    if (!S.plays.length) return '🎯 Your turn — lead any card';
+    if (you.hand.some(c => c.slice(-1)===S.leadSuit)) return `🎯 Your turn — follow ${SYM[S.leadSuit]}`;
+    if (S.firstTrick) return `🎯 No ${SYM[S.leadSuit]} — play any card lower than 10`;
+    return `⚠️ No ${SYM[S.leadSuit]}! Any card you play is a THULLA`;
+  }
+  return `Waiting for ${esc(nameOf(S.turn))}…` + (S.firstTrick ? ' (first round: no Thulla)' : '');
+}
+
+function renderGame(){
+  $('gCode').textContent = S.code; $('gTrick').textContent = S.trickNo;
+  fit();
+  const starting = prevPhase !== 'playing' && S.phase === 'playing' && S.trickNo <= 1 && S.plays.length <= 1;
+  computeGeo();
+  // finished trick sweeps off the table (first state after joining/reloading is not animated)
+  const lt = S.lastTrick, ltId = lt ? lt.id : 0;
+  if (sweepSeen === undefined) sweepSeen = ltId;
+  let swept = false;
+  if (lt && ltId !== sweepSeen) { sweepSeen = ltId; sweep(lt); swept = true; }
+  if (starting) dealAnim();
+  renderTable();
+  const st = $('status');
+  st.innerHTML = (S.duel && S.phase !== 'over' ? '⚔ Final duel · ' : '') + statusText();
+  st.classList.toggle('duel', !!S.duel);
+  renderActions();
+  const you = S.you;
+  // reveal (peek mode)
+  const rv = $('reveal');
+  if (you.reveal) {
+    rv.style.display = 'block';
+    rv.innerHTML = `<b>${esc(you.reveal.name)}'s hand</b> (only you can see this — as it was when you looked)<div class="cards"></div>`;
+    you.reveal.hand.forEach(c => rv.querySelector('.cards').appendChild(cardEl(c)));
+  } else rv.style.display = 'none';
+  // hand
+  const hand = $('hand'); hand.innerHTML = '';
+  const legal = new Set(you.legal), myTurn = S.turn === you.id;
+  you.hand.forEach(c => {
+    const el = cardEl(c, myTurn ? (legal.has(c)?'legal':'dim') : '');
+    if (legal.has(c)) el.onclick = () => send({t:'play', card:c});
+    hand.appendChild(el);
+  });
+  if (!you.hand.length && S.phase !== 'over' && S.stage !== 'pick') {
+    const me = S.players.find(p => p.id === you.id);
+    hand.innerHTML = '<div class="small">' + (me && me.out ? '✔ You are out — safe! Watch the others fight it out.' : 'Your last card is on the table — fingers crossed!') + '</div>';
+  }
+  // game over (let the last trick finish its sweep first)
+  clearTimeout(overTimer);
+  if (S.phase === 'over') {
+    const loser = S.players.find(p => p.id === S.loserId);
+    $('overTitle').textContent = loser ? (loser.id===you.id ? '😅 You are the Bhabhi!' : `🎴 ${loser.name} is the Bhabhi!`) : 'Draw — no Bhabhi!';
+    const ol = $('overList'); ol.innerHTML = '';
+    S.players.filter(p => p.place).sort((a,b) => a.place-b.place).forEach(p => { const li = document.createElement('li'); li.textContent = p.name + (p.id===you.id?' (you)':''); ol.appendChild(li); });
+    if (loser) { const li = document.createElement('li'); li.textContent = loser.name + ' — Bhabhi 🎴'; li.style.color='#ffb4b4'; ol.appendChild(li); }
+    const host = S.hostId === you.id;
+    $('again').style.display = host ? '' : 'none';
+    $('againWait').textContent = host ? '' : 'Waiting for the host to start a new game…';
+    if (swept) overTimer = setTimeout(() => $('over').classList.add('on'), 1500);
+    else $('over').classList.add('on');
+  } else $('over').classList.remove('on');
+}
+
+function handleEvent(){
+  if (!S.event) { if (lastSeq === null) lastSeq = 0; return; }
+  if (lastSeq === null) { lastSeq = S.event.seq; return; }
+  if (S.event.seq !== lastSeq) {
+    lastSeq = S.event.seq;
+    if (S.event.type !== 'over') toast(S.event.text, S.event.type === 'thulla' ? 'thulla' : (S.event.type === 'duel' ? 'duel' : ''));
+  }
+}
+
+setInterval(() => {                                   // move-timer countdown on the active seat
+  document.querySelectorAll('.seat .tm').forEach(el => {
+    const left = Math.max(0, Math.ceil((+el.dataset.end - Date.now()) / 1000));
+    el.textContent = '⏱ ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+    el.classList.toggle('low', left <= 10);
+  });
+}, 250);
+connect();
+</script>
+</body>
+</html>
