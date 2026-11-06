@@ -129,3 +129,20 @@ details summary{cursor:pointer;font-weight:700}details ul{margin:8px 0 0;padding
 .floater span{display:block;font-size:.75rem;background:rgba(0,0,0,.6);border-radius:10px;padding:1px 8px}
 @keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(.5)}12%{opacity:1;transform:translateY(-30px) scale(1.15)}100%{opacity:0;transform:translateY(-300px)}}
 @media(prefers-reduced-motion:reduce){.hand.deal .card,.pilewrap.pop,.floater{animation:none}.btn{transition:none}}
+
+/* fit the whole game in one screen */
+#game.screen.on{display:flex;flex-direction:column;height:100dvh;padding:8px 12px 6px;overflow:hidden}
+#game .gh{margin-bottom:6px;flex:none}.gt{font-size:1.35rem}.gs{font-size:.85rem}
+#game .chips{flex:none;margin:0 0 4px}.chip{padding:4px;font-size:.82rem}
+.otable{flex:1 1 0;min-height:150px;aspect-ratio:auto;margin:0}
+.pillrow,.gpanel,.hand-lbl{flex:none}.pillrow{margin:0 0 6px}
+.gpanel{padding:8px 10px;margin-bottom:6px}.gpanel .gp-t{font-size:1.05rem}.gpanel .gp-s{font-size:.85rem;margin-bottom:6px}
+.btn{padding:9px 14px 8px;margin-bottom:5px}
+.hand-lbl{margin:0 0 2px}.hand-lbl .pill{padding:2px 12px;font-size:.78rem}
+.hand{flex:0 1 auto;min-height:0;overflow-y:auto;gap:5px;padding:6px 4px 4px;--cw:min(12.5vw,58px,8.2dvh)}
+.hand .card.sel{transform:translateY(-6px)}
+#chatBtn{bottom:8px}
+#game.screen{max-width:680px}
+.otable{min-height:190px}
+.hand{max-height:32dvh}
+.center{gap:2px}.bigcount{font-size:2.2rem}

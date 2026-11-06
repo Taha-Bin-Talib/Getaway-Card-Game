@@ -16,7 +16,7 @@ let pickRank = null, ws = null, S = null, me = null, catalog = [], session = nul
 
 /* ---------- helpers ---------- */
 function toast(t) { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => { e.style.display = 'none'; }, 2600); }
-function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('ingame', id !== 'home'); window.scrollTo(0, 0); $('chatBtn').classList.toggle('on', id !== 'home'); if (id !== 'game') $('over').classList.remove('on');
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('ingame', id !== 'home'); if (show.cur !== id) window.scrollTo(0, 0); show.cur = id; $('chatBtn').classList.toggle('on', id !== 'home'); if (id !== 'game') $('over').classList.remove('on');
   if (id === 'home') { $('chat').classList.remove('on'); chatOpen = false; } }
 const nameOf = id => { const p = S && S.players.find(q => q.id === id); return p ? p.name : '?'; };
 function cardEl(c, opts = {}) {
@@ -190,8 +190,6 @@ function renderBluff() {
 function renderJack() {
   const g = S.g, y = g.you; $('ev').textContent = g.event ? g.event.text : '';
   $('panel').style.display = '';
-  const th = $('thrown'); th.textContent = ''; g.thrown.slice().sort((a, b) => rank(a) - rank(b)).forEach(c => th.appendChild(cardEl(c, { mini: true })));
-  th.style.setProperty('--cw', '30px');
   $('thrownCount').textContent = g.thrown.length; $('thrownLbl').textContent = g.thrown.length === 1 ? 'card thrown away' : 'cards thrown away';
   $('sortTimer').style.display = g.stage === 'sort' ? 'block' : 'none';
   const fan = $('fan'); fan.textContent = ''; const ct = $('jackCtrl'); ct.textContent = '';
