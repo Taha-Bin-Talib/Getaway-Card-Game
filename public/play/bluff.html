@@ -12,12 +12,12 @@
 <link rel="stylesheet" href="/multi.css">
 </head>
 <body data-game="bluff">
-<div class="sitebar"><a href="/" style="display:inline-flex;align-items:center;gap:8px"><img src="/img/logo-64.png" width="26" height="26" alt="" style="border-radius:6px">Jack of All</a><nav><a href="/play" data-play>Switch game</a><a href="/games/bluff">Bluff guide</a><a href="/blog">Blog</a></nav></div>
+<div class="sitebar"><a href="/" style="display:inline-flex;align-items:center;gap:8px"><img src="/img/logo-64.png" width="26" height="26" alt="" style="border-radius:6px">Jack of All</a><nav><a href="/play" data-play>Switch game</a><a href="/games/bhabhi-thulla">Thulla guide</a><a href="/games/bluff">Bluff guide</a><a href="/games/jack-thief">Jack Thief guide</a><a href="/blog">Blog</a></nav></div>
 <div id="conn" style="display:none;position:fixed;top:0;left:0;right:0;background:#b3261e;text-align:center;padding:4px;z-index:100;font-size:.9rem">Reconnecting…</div>
 <div id="toast"></div>
 
 <section id="home" class="screen on">
-  <h1>Bluff <span></span></h1>
+  <h1>Play <span>Bluff</span></h1>
   <p class="sub">Put cards face down, say what they are, and call out anyone you think is lying. Play online with 3 to 10 friends.</p>
   <div class="panel">
     <label class="small">Your name</label>
@@ -64,6 +64,32 @@
   <form id="chatForm"><input id="chatIn" maxlength="120" placeholder="Say something…" autocomplete="off"><button class="btn" style="padding:8px 12px">Send</button></form>
   <div class="emojis" id="emojis"><button>😂</button><button>😢</button><button>😉</button><button>😡</button><button>😮</button><button>👏</button><button>🔥</button><button>👍</button></div></div>
 <div id="floaters"></div>
+<section class="seo" id="about-game">
+<h2>About Bluff online</h2>
+<p>Bluff, also known as Cheat or I Doubt It, is a card game about nerve and deception. Everyone tries to get rid of their cards, but you can only play them by <strong>claiming</strong> what they are. Put one to four cards face down, name a rank such as “two Aces”, and hope nobody calls you out. This page lets you play it in real time with three to ten friends, right in your browser.</p>
+<p>Each player in turn can <strong>call bluff</strong>, <strong>add</strong> one to four more face-down cards for the same rank, or <strong>pass</strong>. If the call is right, the liar picks up the whole pile; if it is wrong, the caller does. Our version adds an extra turn: when everyone else passes, the player who made the last play gets another chance to add cards before the pile is thrown away. Read the <a href="/games/bluff">full rules and strategy guide</a> for the details.</p>
+<h2>Features</h2>
+<ul>
+<li><strong>Rooms for 3 to 10 players</strong> with a four-letter code and a one-tap invite link.</li>
+<li><strong>Oval table</strong> where every player sits around the pile and the current turn is highlighted.</li>
+<li><strong>Fair server-side shuffle</strong> and full rule enforcement, so nobody can cheat for real.</li>
+<li><strong>One-minute timer</strong> per move so a slow player cannot hold up the game.</li>
+<li><strong>Two decks automatically</strong> for larger groups, so lies stay believable.</li>
+<li><strong>Room chat and emoji reactions</strong> that float over the table.</li>
+<li><strong>Automatic play for dropped players</strong>; reopen the page to rejoin.</li>
+</ul>
+<h2>Controls</h2>
+<table>
+<tr><th>Action</th><th>How</th></tr>
+<tr><td>Create or join a room</td><td>Enter your name, then press <em>Create a room</em>, or type a friend's code and press <em>Join room</em>.</td></tr>
+<tr><td>Open a round</td><td>Tap one to four cards, choose the rank you are claiming, then press <em>Play</em>.</td></tr>
+<tr><td>Respond to a play</td><td>Press <em>Call bluff</em>, select one to four cards and press <em>Add</em>, or press <em>Pass</em>.</td></tr>
+<tr><td>Chat and react</td><td>Open the chat panel to type a message, or tap an emoji to send a reaction to the table.</td></tr>
+</table>
+<h2>Tips for your first game</h2>
+<p>Lie small: one wrong card hidden among honest ones is much harder to challenge than four cards you do not own. Count the cards you can see, and remember that a player who just picked up the pile now holds many cards and is often forced to bluff.</p>
+<p class="small" style="opacity:.7"><a href="/">Home</a> · <a href="/blog">Blog</a> · <a href="/about">About</a> · <a href="/privacy">Privacy policy</a></p>
+</section>
 <script src="/multi.js"></script>
 <script src="/site.js" defer></script>
 </body>
