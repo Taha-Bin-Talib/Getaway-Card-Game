@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="/img/logo-180.png">
 <meta property="og:image" content="/img/og.jpg">
 <style>
+.ingame .sitebar,.ingame .seo{display:none}
 .sitebar{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:980px;margin:0 auto;padding:10px 16px 0;font-size:.92rem}
 .sitebar a{color:#fff;opacity:.85;text-decoration:none;font-weight:600}.sitebar a:hover{opacity:1;color:var(--gold)}
 .sitebar nav{display:flex;gap:4px 14px;flex-wrap:wrap}
@@ -377,7 +378,7 @@ function showErr(msg){
   ['homeErr','lobbyErr'].forEach(id => $(id).textContent = msg);
   toast(msg, '');
 }
-function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('ingame', id !== 'home'); window.scrollTo(0, 0); }   // the site header + text below the game only show on the start screen
 function toast(text, cls){
   const t = $('toast'); t.textContent = text; t.className = 'show ' + (cls||'');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', 2800);
