@@ -126,6 +126,33 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 #hand .card.legal:hover{transform:translateY(-16px)}
 #hand .card.dim{opacity:.5;filter:grayscale(.5)}
 
+/* ---------- app-style gameplay UX (same colours as the site) ---------- */
+.top{align-items:flex-start;flex-wrap:nowrap}
+.gt{margin:0;font-size:1.7rem;line-height:1.1}
+.top .meta{color:var(--gold);font-weight:500}
+.btn{box-shadow:0 5px 0 #b8901f,0 8px 14px rgba(0,0,0,.35);border-radius:14px;padding:13px 18px 12px;margin-bottom:5px;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #b8901f,0 2px 6px rgba(0,0,0,.35)}
+.btn.ghost{background:#3b6b55;box-shadow:0 5px 0 #1b3b2c,0 8px 14px rgba(0,0,0,.35)}
+.btn.ghost:active:not(:disabled){box-shadow:0 1px 0 #1b3b2c}
+.btn.danger{box-shadow:0 5px 0 #8f2a2a,0 8px 14px rgba(0,0,0,.35)}
+.btn.danger:active:not(:disabled){box-shadow:0 1px 0 #8f2a2a}
+.btn.rbtn{width:46px;height:46px;padding:0;font-size:.75rem;margin:0;flex:none;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.35);background:rgba(255,255,255,.18)}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:8px;margin:0 0 6px}
+.chip{background:rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.14);border-radius:12px;padding:7px 4px;text-align:center;font-size:.9rem;min-width:0}
+.chip b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip span{color:rgba(255,255,255,.76)}
+.chip.turn{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.chip.out{opacity:.5}
+#status{display:block;width:fit-content;max-width:100%;margin:6px auto 6px;padding:5px 14px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(0,0,0,.3);font-size:.9rem}
+#status:empty{display:none}
+.box{border:1.5px solid var(--gold);background:rgba(0,0,0,.4);border-radius:16px;padding:12px 14px;width:100%;max-width:520px}
+.hand-lbl{display:flex;justify-content:center;margin:4px 0 6px}
+.pillx{border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:5px 14px;font-size:.85rem;background:rgba(0,0,0,.3)}
+#hand{gap:8px;padding:10px 4px 18px}
+#hand .card{--cw:min(17.6vw,70px);border-radius:calc(var(--cw)*.1)}
+#hand .card.legal{transform:translateY(-6px);box-shadow:0 0 0 2.5px var(--gold),0 6px 10px rgba(0,0,0,.45)}
+@media(max-width:560px){#hand{gap:8px}}
+
 #toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-120px);background:var(--gold);color:#222;font-weight:800;padding:12px 22px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.5);transition:transform .3s;z-index:50;max-width:92vw;text-align:center}
 #toast.show{transform:translate(-50%,0)}
 #toast.thulla{background:#ff5252;color:#fff}
@@ -238,9 +265,10 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 <!-- GAME -->
 <section id="game" class="screen">
   <div class="top">
-    <div class="meta">Room <b id="gCode"></b> · Trick <b id="gTrick"></b></div>
-    <button class="btn ghost" id="leaveGame">Leave</button>
+    <div><h1 class="gt">Bhabhi Thulla</h1><div class="meta">Room <b id="gCode"></b> · Trick <b id="gTrick"></b></div></div>
+    <button class="btn ghost rbtn" id="leaveGame" aria-label="Leave room">Leave</button>
   </div>
+  <div class="chips" id="chips"></div>
   <div id="stage">
     <div id="ring">
       <div id="felt"></div>
@@ -255,6 +283,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
   <div id="status"></div>
   <div id="actions"></div>
   <div id="reveal"></div>
+  <div class="hand-lbl"><span class="pillx">Your hand · only you</span></div>
   <div id="hand"></div>
 </section>
 
@@ -705,6 +734,7 @@ function statusText(){
 
 function renderGame(){
   $('gCode').textContent = S.code; $('gTrick').textContent = S.trickNo;
+  $('chips').innerHTML = S.players.map(p => `<div class="chip${p.id === S.turn ? ' turn' : ''}${p.out ? ' out' : ''}"><b>${p.id === S.you.id ? 'You' : esc(p.name)}</b><span>${p.out ? 'out ✓' : p.count}</span></div>`).join('');
   fit();
   const starting = prevPhase !== 'playing' && S.phase === 'playing' && S.trickNo <= 1 && S.plays.length <= 1;
   computeGeo();
