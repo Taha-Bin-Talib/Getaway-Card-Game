@@ -3,7 +3,7 @@
 Real-time multiplayer Thulla for 3–8 players. Node.js + WebSockets, no database, no build step.
 
 ## Site pages
-- `/` home page (Play button, the three games, how it works) · `/play` the live Bhabhi Thulla game (with an about/features/controls text section under the table)
+- `/` home page (Play button, the three games, how it works) · `/play` the live Bhabhi Thulla game, `/play/bluff` and `/play/jack-thief` the other two games (same room-code flow; served over a second socket, `/ws/games`, by `multi/`). The Play buttons open a pop-up (`public/site.js`) that asks which game (with an about/features/controls text section under the table)
 - `/games/bhabhi-thulla`, `/games/bluff`, `/games/jack-thief` long-form rules & strategy guides · `/blog` updates · `/about` · `/privacy`
 - Static HTML in `public/` with shared `site.css`; extensionless URLs are served by `server.js`. Old invite links `/?room=CODE` are forwarded to `/play?room=CODE`.
 
@@ -53,3 +53,6 @@ Health check URL: `/healthz`. (Note: Vercel/Netlify static/serverless hosting wi
 
 ## Chat & reactions
 Tap the 💬 button in a room to chat (last 60 messages kept, 120 chars each) or send a quick reaction (😂 😢 😉 😡 😮 👏 🔥 👍) that floats up on everyone's screen.
+
+## Bluff and Jack Thief
+Engines live in `multi/games/` (shared with the Jack of All app) and run through `multi/rooms.js` on the WebSocket path `/ws/games`; Thulla keeps its original protocol on `/`. Clients: `public/play/bluff.html`, `public/play/jack-thief.html` + `public/multi.js`.

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
+const multi = require('./multi/rooms');            // Bluff + Jack Thief rooms (own protocol, own socket path)
 
 const PORT = process.env.PORT || 3000;
 const PUB = path.join(__dirname, 'public');
@@ -555,7 +556,23 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const wss = new WebSocketServer({ server, maxPayload: 4096 });
+const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });          // Thulla (path /)
+const wssMulti = new WebSocketServer({ noServer: true, maxPayload: 4096 });     // Bluff + Jack Thief (path /ws/games)
+server.on('upgrade', (req, socket, head) => {
+  const target = req.url.split('?')[0] === '/ws/games' ? wssMulti : wss;
+  target.handleUpgrade(req, socket, head, ws => target.emit('connection', ws, req));
+});
+wssMulti.on('connection', ws => {
+  ws.alive = true;
+  ws.on('pong', () => { ws.alive = true; });
+  ws.on('message', data => { let m; try { m = JSON.parse(data.toString()); } catch (e) { return; } try { multi.handle(ws, m); } catch (e) { console.error(e); } });
+  ws.on('close', () => multi.disconnect(ws));
+  ws.on('error', () => {});
+});
+setInterval(() => {                                   // drop dead sockets so players show as disconnected (and are auto-played)
+  for (const ws of wssMulti.clients) { if (!ws.alive) { ws.terminate(); continue; } ws.alive = false; try { ws.ping(); } catch (e) { /* ignore */ } }
+  multi.sweep();
+}, 15000).unref();
 wss.on('connection', ws => {
   ws.isAlive = true; ws.ctx = null;
   ws.on('pong', () => { ws.isAlive = true; });
