@@ -17,7 +17,7 @@ const REQUEST_MAX_CARDS = 5;                                // a hand can only b
 const BOT_MS = Math.max(1, num(process.env.BOT_MS, 4000)); // auto-play delay for disconnected players
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png', '.txt': 'text/plain; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8',
 };
 
 /* ---------- card helpers ---------- */
