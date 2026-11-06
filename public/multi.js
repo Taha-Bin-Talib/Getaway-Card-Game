@@ -16,7 +16,8 @@ let pickRank = null, ws = null, S = null, me = null, catalog = [], session = nul
 
 /* ---------- helpers ---------- */
 function toast(t) { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => { e.style.display = 'none'; }, 2600); }
-function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('ingame', id !== 'home'); window.scrollTo(0, 0); $('chatBtn').classList.toggle('on', id !== 'home'); if (id === 'home') { $('chat').classList.remove('on'); chatOpen = false; } }
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('ingame', id !== 'home'); window.scrollTo(0, 0); $('chatBtn').classList.toggle('on', id !== 'home'); if (id !== 'game') $('over').classList.remove('on');
+  if (id === 'home') { $('chat').classList.remove('on'); chatOpen = false; } }
 const nameOf = id => { const p = S && S.players.find(q => q.id === id); return p ? p.name : '?'; };
 function cardEl(c, opts = {}) {
   const r = rank(c), s = suit(c), e = el(opts.tag || 'div', 'card' + (s === 'H' || s === 'D' ? ' red' : '') + (opts.mini ? ' mini' : '') + (opts.sel ? ' sel' : '') + (opts.dim ? ' dim' : ''));
@@ -45,7 +46,7 @@ setInterval(() => send({ t: 'ping' }), 25000);
 function onMsg(m) {
   switch (m.t) {
     case 'joined': session = { code: m.code, token: m.token }; store.set(SKEY, JSON.stringify(session)); me = m.id; catalog = m.catalog || []; break;
-    case 'state': S = m.s; me = S.you.id; if (S.game !== GAME) { location.replace('/play/' + SLUG[S.game] + '?room=' + S.code); return; } render(); break;
+    case 'state': if (!session) return; S = m.s; me = S.you.id; if (S.game !== GAME) { location.replace('/play/' + SLUG[S.game] + '?room=' + S.code); return; } render(); break;
     case 'error': toast(m.m); $('homeErr').textContent = m.m; break;
     case 'gone': session = null; store.del(SKEY); S = null; show('home'); break;
     case 'kicked': toast('You were removed from the room.'); reset(); break;
