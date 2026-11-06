@@ -82,6 +82,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 .slot .card{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
 .slot.best .card{outline:calc(var(--u)*.7) solid var(--gold);box-shadow:0 0 calc(var(--u)*3) rgba(245,197,66,.8)}
 .slot.thulla .card{outline:calc(var(--u)*.7) solid #ff6b6b;box-shadow:0 0 calc(var(--u)*3) rgba(255,80,80,.8)}
+#fx .ring{position:absolute;left:calc(var(--u)*-7);top:calc(var(--u)*-7);width:calc(var(--u)*14);height:calc(var(--u)*14);border-radius:50%;border:calc(var(--u)*.8) solid var(--gold);box-shadow:0 0 calc(var(--u)*2) rgba(245,197,66,.8)}
 #fx .card,.fxcard{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
 #fx .card.back{--cw:calc(var(--u)*5)}
 
@@ -495,7 +496,9 @@ function renderPlays(){
       $('slots').appendChild(el); slotEls.set(pl.card, el);
       const from = polar(geo[pl.pid].ang, SEAT, 1.1);
       const dx = (from.x - dest.x) * ringW / 100, dy = (from.y - dest.y) * ringW / 100;
-      if (el.animate) el.animate([
+      const isSlam = off && S.settle && S.settle.kind === 'thulla' && k === S.plays.length - 1;   // the off-suit card that caused the Thulla
+      if (isSlam) slam(el, dx, dy, rot, dest);
+      else if (el.animate) el.animate([
         { transform: `translate(${dx}px,${dy}px) rotate(${rot - 140}deg) scale(.55)`, opacity: 0 },
         { transform: `translate(${dx*.25}px,${dy*.25}px) rotate(${rot - 20}deg) scale(1.08)`, opacity: 1, offset: .7 },
         { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 }
@@ -505,6 +508,33 @@ function renderPlays(){
     el.classList.toggle('thulla', off);
   });
   slotEls.forEach((el, id) => { if (!keep.has(id)) { el.remove(); slotEls.delete(id); } });
+}
+
+/* THULLA SLAM: the card is lifted and held (hover, 1.4x), then slammed down hard; it lands at a random angle with a
+   squash, a gold shockwave ring, a screen shake and a phone buzz. Reduced-motion users get a short drop and the buzz only. */
+function slam(el, dx, dy, rot, dest){
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const jit = Math.random() * 56 - 28, ox = (Math.random() * 2 - 1) * ringW * .012, oy = (Math.random() * 2 - 1) * ringW * .012;
+  const fin = `translate(${ox}px,${oy}px) rotate(${rot + jit}deg)`;
+  el.style.transform = fin; el.style.zIndex = 40;
+  const land = () => {
+    try { if (navigator.vibrate) navigator.vibrate([0, 70, 45, 35]); } catch (e) { /* not supported */ }
+    if (reduce || !el.animate) return;
+    el.animate([{ transform: `${fin} scale(1.18)` }, { transform: `${fin} scale(.94)`, offset: .5 }, { transform: `${fin} scale(1)` }], { duration: 260, easing: 'ease-out' });
+    const ring = document.createElement('div'); ring.className = 'ring'; place(ring, dest); $('fx').appendChild(ring);
+    const r = ring.animate([{ transform: 'scale(.4)', opacity: .95 }, { transform: 'scale(2.3)', opacity: 0 }], { duration: 480, easing: 'ease-out', fill: 'both' });
+    r.onfinish = () => ring.remove();
+    const A = Math.max(6, ringW * .012);                                  // screen shake: decaying jolts
+    $('stage').animate([0, -1, .85, -.65, .45, -.25, 0].map(m => ({ transform: `translate(${m * A}px,${-m * A * .6}px)` })), { duration: 380, easing: 'linear' });
+  };
+  if (!el.animate) return land();
+  if (reduce) { const a = el.animate([{ transform: `${fin} translateY(-24px)`, opacity: 0 }, { transform: fin, opacity: 1 }], { duration: 220, fill: 'backwards' }); a.onfinish = land; return; }
+  const a = el.animate([
+    { transform: `translate(${dx}px,${dy}px) rotate(${rot - 140}deg) scale(.55)`, opacity: 0, easing: 'cubic-bezier(.2,.7,.3,1)' },
+    { transform: `translate(0,-36px) rotate(${rot}deg) scale(1.4)`, opacity: 1, offset: .38, easing: 'cubic-bezier(.7,0,1,.5)' },
+    { transform: `${fin} scale(1)`, opacity: 1 }
+  ], { duration: 560, fill: 'backwards' });
+  a.onfinish = land;
 }
 
 /* finished trick leaves the table: into the discard pile, or (Thulla) to whoever picks it up */
