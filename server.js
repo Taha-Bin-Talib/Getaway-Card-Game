@@ -549,7 +549,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(f, (e, d) => {
     if (e) {
       res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<!doctype html><meta charset="utf-8"><title>Page not found</title><body style="font-family:system-ui;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Getaway Card Game</a></p>');
+      return res.end('<!doctype html><meta charset="utf-8"><title>Page not found</title><body style="font-family:system-ui;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Jack of All</a></p>');
     }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(d);

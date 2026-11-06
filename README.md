@@ -1,6 +1,6 @@
-# Bhabhi Thulla Online
+# Jack of All — online card games
 
-Real-time multiplayer Thulla for 3–8 players. Node.js + WebSockets, no database, no build step.
+Real-time multiplayer card games for friends: Bhabhi Thulla (3–8 players), Bluff (3–10) and Jack Thief (2–10). Node.js + WebSockets, no database, no build step.
 
 ## Site pages
 - `/` home page (Play button, the three games, how it works) · `/play` the live Bhabhi Thulla game, `/play/bluff` and `/play/jack-thief` the other two games (same room-code flow; served over a second socket, `/ws/games`, by `multi/`). The Play buttons open a pop-up (`public/site.js`) that asks which game (with an about/features/controls text section under the table)
