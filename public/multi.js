@@ -166,7 +166,7 @@ function renderBluff() {
   drawHand($('hand'), y.hand.slice().sort((a, b) => rank(a) - rank(b)), max);
   let pt = '', hint = '';
   if (open) { pt = 'Your turn to open'; hint = 'Pick 1–4 cards, name a rank, and play them face down. They don’t have to match what you say.'; }
-  else if (resp) { pt = g.claim ? `${nameOf(g.claim.by)} says: ${g.claim.count} ${g.claim.name}${g.claim.count === 1 ? '' : 's'}` : 'Your turn'; hint = y.own ? 'Everyone passed — add 1–2 more cards of the same rank, or pass to throw the pile away.' : 'Call their bluff, add 1–2 more cards to the pile, or pass.'; }
+  else if (resp) { pt = g.claim ? `${nameOf(g.claim.by)} says: ${g.claim.count} ${g.claim.name}${g.claim.count === 1 ? '' : 's'}` : 'Your turn'; hint = y.own ? 'Everyone passed — add 1–4 more cards of the same rank, or pass to throw the pile away.' : 'Call their bluff, add 1–4 more cards to the pile, or pass.'; }
   else if (g.stage === 'reveal') { pt = 'Revealing…'; }
   else if (g.turn) { pt = `${nameOf(g.turn)} is thinking…`; }
   $('pt').textContent = pt; $('hint').textContent = hint;
@@ -179,7 +179,7 @@ function renderBluff() {
     ct.appendChild(s); ct.appendChild(b);
   } else if (resp) {
     if (!y.own) { const c = el('button', 'btn red', 'Call bluff'); c.disabled = !y.canCall; c.onclick = () => act('call'); ct.appendChild(c); }
-    const a = el('button', 'btn dark', sel.length ? `Add ${sel.length}` : 'Add 1–2'); a.disabled = !sel.length;
+    const a = el('button', 'btn dark', sel.length ? `Add ${sel.length}` : 'Add 1–4'); a.disabled = !sel.length;
     a.onclick = () => { act('add', { cards: sel.slice() }); sel = []; };
     const p = el('button', 'btn green', 'Pass'); p.onclick = () => act('pass');
     ct.appendChild(a); ct.appendChild(p);
