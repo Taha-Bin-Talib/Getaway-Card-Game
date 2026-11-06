@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play Jack Thief Online — Free Multiplayer Card Game | Getaway Card Game</title>
+<meta name="description" content="Pair up your cards, draw from your neighbour and avoid being left holding the lonely Jack. Play online with 2 to 10 friends.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/multi.css">
+</head>
+<body data-game="jackthief">
+<div class="sitebar"><a href="/">&larr; Getaway Card Game</a><nav><a href="/play" data-play>Switch game</a><a href="/games/jack-thief">Jack Thief guide</a><a href="/blog">Blog</a></nav></div>
+<div id="conn" style="display:none;position:fixed;top:0;left:0;right:0;background:#b3261e;text-align:center;padding:4px;z-index:100;font-size:.9rem">Reconnecting…</div>
+<div id="toast"></div>
+
+<section id="home" class="screen on">
+  <h1>Jack <span>Thief</span></h1>
+  <p class="sub">Pair up your cards, draw from your neighbour and avoid being left holding the lonely Jack. Play online with 2 to 10 friends.</p>
+  <div class="panel">
+    <label class="small">Your name</label>
+    <input id="name" maxlength="14" placeholder="e.g. Saad" autocomplete="nickname">
+    <div class="row" style="margin-top:12px"><button class="btn" id="create">Create a room</button></div>
+    <div class="row" style="margin-top:12px">
+      <input id="code" maxlength="4" placeholder="Room code" style="text-transform:uppercase;letter-spacing:4px;font-weight:700">
+      <button class="btn ghost" id="join">Join room</button>
+    </div>
+    <div class="err" id="homeErr"></div>
+  </div>
+  <div class="panel"><details><summary>How to play</summary><ul><li>2 to 10 players. One random Jack is removed and the other 51 cards are dealt.</li><li>First, throw away every pair you hold (tap two cards of the same rank), then press Done.</li><li>Then take turns drawing one hidden card from the next player’s hand and throw away any new pair.</li><li>Whoever is left holding the unpaired Jack is the <b>Jack Thief</b>.</li></ul></details></div>
+</section>
+
+<section id="lobby" class="screen">
+  <h1 id="lobbyTitle">Waiting room</h1>
+  <div class="panel" style="text-align:center">
+    <div class="small">Room code</div><div class="code" id="lobbyCode">----</div>
+    <div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="copyLink" style="flex:0 1 auto">Copy invite link</button></div>
+  </div>
+  <div class="panel"><ul class="plist" id="plist"></ul></div>
+  <div class="panel" id="settings"></div>
+  <div class="hint" id="lobbyHint"></div>
+  <div class="row"><button class="btn" id="start">Start game</button><button class="btn ghost" data-leave>Leave room</button></div>
+</section>
+
+<section id="game" class="screen">
+  <div class="row" style="justify-content:space-between"><span class="small">Jack Thief</span><button class="btn ghost" data-leave style="flex:0 0 auto;padding:5px 12px">Leave</button></div>
+  <div class="seats" id="seats"></div>
+  <div class="table">
+    <div class="small" id="thrownCount"></div><div class="thrown" id="thrown"></div><div class="small" id="sortTimer"></div><div class="fan" id="fan"></div>
+    <div class="ev" id="ev"></div>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div class="ctrl" id="jackCtrl"></div>
+  <div class="hand" id="hand"></div>
+</section>
+
+<div class="modal" id="over"><div class="box"><h2 id="overTitle"></h2><p id="overSub" class="small"></p>
+  <div class="row" style="margin-top:12px"><button class="btn" id="again">Play again</button><button class="btn ghost" data-leave>Leave</button></div>
+  <p class="small" id="overWait" style="display:none">Waiting for the host to start a new game…</p></div></div>
+
+<button id="chatBtn" aria-label="Chat">💬<b id="chatBadge" style="position:absolute;top:-6px;right:-6px;background:#ff5252;border-radius:10px;font-size:12px;min-width:20px;padding:1px 5px;display:none"></b></button>
+<div id="chat"><div id="chatLog"></div>
+  <form id="chatForm"><input id="chatIn" maxlength="120" placeholder="Say something…" autocomplete="off"><button class="btn" style="padding:8px 12px">Send</button></form>
+  <div class="emojis" id="emojis"><button>😂</button><button>😢</button><button>😉</button><button>😡</button><button>😮</button><button>👏</button><button>🔥</button><button>👍</button></div></div>
+<div id="floaters"></div>
+<script src="/multi.js"></script>
+<script src="/site.js" defer></script>
+</body>
+</html>
