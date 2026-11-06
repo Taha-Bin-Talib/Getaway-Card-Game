@@ -21,6 +21,7 @@ const nameOf = id => { const p = S && S.players.find(q => q.id === id); return p
 function cardEl(c, opts = {}) {
   const r = rank(c), s = suit(c), e = el(opts.tag || 'div', 'card' + (s === 'H' || s === 'D' ? ' red' : '') + (opts.mini ? ' mini' : '') + (opts.sel ? ' sel' : '') + (opts.dim ? ' dim' : ''));
   const tl = el('div', 'tl', rlabel(r)); tl.appendChild(el('small', null, SYM[s])); e.appendChild(tl); e.appendChild(el('div', 'mid', SYM[s]));
+  const br = el('div', 'br', rlabel(r)); br.appendChild(el('small', null, SYM[s])); e.appendChild(br);
   e.setAttribute('aria-label', `${RNAME[r]} of ${{ S: 'spades', H: 'hearts', D: 'diamonds', C: 'clubs' }[s]}`);
   return e;
 }
@@ -97,63 +98,89 @@ function renderLobby() {
 
 /* ---------- table pieces ---------- */
 function renderSeats() {
-  const g = S.g, box = $('seats'); box.textContent = '';
+  const g = S.g, box = $('seats'), ring = $('ring'); box.textContent = ''; ring.textContent = '';
+  $('gsub').textContent = 'Room ' + S.code;
+  const n = S.players.length, mi = Math.max(0, S.players.findIndex(p => p.id === me));
+  const order = S.players.map((p, i) => S.players[(mi + i) % n]);          // me first
   S.players.forEach(p => {
     const sd = g.seats.find(x => x.id === p.id) || {};
     const turn = g.turn === p.id || (g.pick && g.pick.pid === p.id);
-    const d = el('div', 'seat' + (turn ? ' turn' : '') + (sd.out || (sd.count === 0 && S.phase !== 'lobby' && GAME === 'bluff') ? ' out' : '') + (p.id === me ? ' me' : ''));
-    d.appendChild(el('b', null, p.name + (p.id === me ? ' (you)' : '')));
-    const sub = sd.count === 0 ? (GAME === 'bluff' ? 'safe ✓' : 'out ✓') : (sd.count + ' card' + (sd.count === 1 ? '' : 's'));
-    d.appendChild(el('div', 'cnt', (!p.connected ? 'offline · ' : '') + sub + (GAME === 'jackthief' && g.stage === 'sort' && sd.ready ? ' · done' : '')));
+    const done = sd.out || (sd.count === 0 && S.phase !== 'lobby' && GAME === 'bluff');
+    const sub = sd.count === 0 ? (GAME === 'bluff' ? 'safe ✓' : 'out ✓') : (GAME === 'jackthief' && g.stage === 'sort' && sd.ready ? '✓ done' : String(sd.count));
+    const c = el('div', 'chip' + (turn ? ' turn' : '') + (done ? ' out' : ''));
+    c.appendChild(el('b', null, p.id === me ? 'You' : p.name)); c.appendChild(el('span', null, (!p.connected ? 'offline' : sub)));
+    box.appendChild(c);
+  });
+  order.forEach((p, i) => {
+    const sd = g.seats.find(x => x.id === p.id) || {};
+    const turn = g.turn === p.id || (g.pick && g.pick.pid === p.id);
+    const done = sd.out || (sd.count === 0 && GAME === 'bluff');
+    const ang = Math.PI / 2 + (i * 2 * Math.PI) / n;                        // me at bottom, clockwise
+    const rx = 43, ry = 39 + (n > 6 ? 2 : 0);
+    const d = el('div', 'seatp' + (turn ? ' turn' : '') + (done ? ' out' : '') + (p.id === me ? ' me' : ''));
+    d.style.left = (50 + rx * Math.cos(ang)) + '%'; d.style.top = (50 + ry * Math.sin(ang)) + '%';
+    if (p.id !== me && sd.count > 0) { const mf = el('div', 'mf'); const k = Math.min(4, sd.count); for (let j = 0; j < k; j++) { const b = backEl(); b.style.setProperty('--r', ((j - (k - 1) / 2) * 9) + 'deg'); mf.appendChild(b); } d.appendChild(mf); }
+    d.appendChild(el('div', 'av', (p.id === me ? 'T' : p.name[0] || '?').toUpperCase()));
+    const np = el('div', 'np'); np.appendChild(el('b', null, p.id === me ? 'You' : p.name));
+    np.appendChild(el('span', null, sd.count === 0 ? (GAME === 'bluff' ? 'safe ✓' : 'out ✓') : (sd.count + ' cards')));
+    d.appendChild(np);
     if (turn && g.timer && g.timer.pid === p.id) d.appendChild(timerBar(g.timer.ms));
-    box.appendChild(d);
+    ring.appendChild(d);
   });
 }
-function renderTimer() { clearInterval(tick); const g = S.g; if (GAME === 'jackthief' && g.stage === 'sort') { let ms = g.sortMs; const t = $('sortTimer'); const f = () => { t.textContent = 'Sorting time left: ' + Math.ceil(Math.max(0, ms) / 1000) + 's'; ms -= 1000; }; f(); tick = setInterval(f, 1000); } }
+function renderTimer() { clearInterval(tick); const g = S.g; if (GAME === 'jackthief' && g.stage === 'sort') { let ms = g.sortMs; const t = $('sortTimer'); const f = () => { t.textContent = 'sorting: ' + Math.ceil(Math.max(0, ms) / 1000) + 's'; ms -= 1000; }; f(); tick = setInterval(f, 1000); } }
 function toggleSel(c, max) {
   const i = sel.indexOf(c);
   if (i >= 0) sel.splice(i, 1); else if (sel.length < max) sel.push(c); else toast(`You can pick at most ${max} card${max === 1 ? '' : 's'}.`);
   render();
 }
 function drawHand(box, hand, max, opts = {}) {
-  box.textContent = ''; sel = sel.filter(c => hand.includes(c));
-  hand.forEach(c => { const e = cardEl(c, { sel: sel.includes(c), tag: 'button' }); e.onclick = () => (opts.onTap ? opts.onTap(c) : toggleSel(c, max)); box.appendChild(e); });
+  const fresh = !box.children.length && hand.length > 3 && S.phase === 'playing';
+  box.textContent = ''; sel = sel.filter(c => hand.includes(c)); box.classList.toggle('deal', fresh);
+  hand.forEach(c => { const e = cardEl(c, { sel: sel.includes(c), tag: 'button' }); e.onclick = () => (opts.onTap ? opts.onTap(c) : toggleSel(c, max)); e.style.setProperty('--i', box.children.length); box.appendChild(e); });
 }
 
 /* ---------- BLUFF ---------- */
 function bestRank(hand) { const n = {}; hand.forEach(c => { n[rank(c)] = (n[rank(c)] || 0) + 1; }); return +Object.keys(n).sort((a, b) => n[b] - n[a] || b - a)[0] || 14; }
 function renderBluff() {
   const g = S.g, y = g.you, my = g.turn === me, ct = $('bluffCtrl'), tb = $('claim'); ct.textContent = '';
-  const pile = $('pile'); pile.textContent = '';
-  for (let i = 0; i < Math.min(3, Math.ceil(g.pile / 3) || 0); i++) pile.appendChild(backEl());
-  pile.appendChild(el('div', 'small', g.pile ? `Pile: ${g.pile} card${g.pile === 1 ? '' : 's'}` : 'Pile is empty'));
-  tb.textContent = '';
-  if (g.claim) { tb.appendChild(document.createTextNode(nameOf(g.claim.by) + ' says: ')); tb.appendChild(el('span', null, `${g.claim.count} × ${g.claim.name}${g.claim.count === 1 ? '' : 's'}`)); }
-  else tb.textContent = g.turn ? `${my ? 'You open' : nameOf(g.turn) + ' opens'} a new round` : '';
-  $('ev').textContent = g.event ? g.event.text : '';
+  const pile = $('pile'), prev = +pile.dataset.n || 0; pile.textContent = '';
+  const k = Math.min(5, g.pile);
+  for (let i = 0; i < k; i++) { const b = backEl(); b.style.setProperty('--r', ((i - (k - 1) / 2) * 7) + 'deg'); b.style.setProperty('--x', ((i - (k - 1) / 2) * 3) + 'px'); pile.appendChild(b); }
+  if (g.pile) pile.appendChild(el('div', 'badge', g.pile));
+  if (g.pile !== prev) { pile.classList.remove('pop'); void pile.offsetWidth; if (g.pile > prev) pile.classList.add('pop'); } pile.dataset.n = g.pile;
+  tb.style.display = ''; tb.textContent = '';
+  if (g.claim) tb.textContent = `“${g.claim.count} ${g.claim.name}${g.claim.count === 1 ? '' : 's'}”`;
+  else if (!g.pile) { tb.className = 'emptytag'; tb.textContent = 'Pile is empty'; }
+  tb.className = g.claim ? 'claimtag' : 'emptytag';
+  const evt = g.event ? g.event.text : ''; $('ev').textContent = evt;
   const rv = $('reveal'); rv.textContent = ''; rv.style.display = g.reveal ? 'block' : 'none';
   if (g.reveal) {
     const r = g.reveal; rv.appendChild(el('div', 'v', `${nameOf(r.callerId)} called ${nameOf(r.playerId)}'s play of ${RNAME[r.rank]}s — ` + (r.truthful ? 'it was TRUE!' : 'it was a LIE!')));
-    const row = el('div', 'thrown'); r.cards.forEach(c => row.appendChild(cardEl(c, { mini: true }))); rv.appendChild(row);
+    const row = el('div', 'thrown'); row.style.setProperty('--cw', '34px'); r.cards.forEach(c => row.appendChild(cardEl(c, { mini: true }))); rv.appendChild(row);
     rv.appendChild(el('div', 'small', `${nameOf(r.loserId)} picks up the pile${r.taken ? ' (' + r.taken + ' card' + (r.taken === 1 ? '' : 's') + ')' : ''}.`));
   }
   const open = g.stage === 'open' && my, resp = g.stage === 'respond' && my;
   const max = open ? y.maxOpen : resp ? y.maxAdd : 0;
   drawHand($('hand'), y.hand, max);
-  $('hint').textContent = open ? 'Your turn: pick 1–4 cards, name a rank, and play them face down. They don’t have to match what you say.'
-    : resp ? (y.own ? 'Everyone passed on your play — add 1–2 more cards of the same rank, or pass to throw the pile away.' : 'Your turn: call bluff, add 1–2 cards to the same rank, or pass.')
-    : g.stage === 'reveal' ? 'Revealing…' : (g.turn ? `${nameOf(g.turn)} is thinking…` : '');
+  let pt = '', hint = '';
+  if (open) { pt = 'Your turn to open'; hint = 'Pick 1–4 cards, name a rank, and play them face down. They don’t have to match what you say.'; }
+  else if (resp) { pt = g.claim ? `${nameOf(g.claim.by)} says: ${g.claim.count} ${g.claim.name}${g.claim.count === 1 ? '' : 's'}` : 'Your turn'; hint = y.own ? 'Everyone passed — add 1–2 more cards of the same rank, or pass to throw the pile away.' : 'Call their bluff, add 1–2 more cards to the pile, or pass.'; }
+  else if (g.stage === 'reveal') { pt = 'Revealing…'; }
+  else if (g.turn) { pt = `${nameOf(g.turn)} is thinking…`; }
+  $('pt').textContent = pt; $('hint').textContent = hint;
+  $('panel').style.display = pt || hint ? '' : 'none';
   if (open) {
     const s = el('select'); for (let r = 14; r >= 2; r--) { const o = el('option', null, RNAME[r] + 's'); o.value = r; s.appendChild(o); }
     s.value = pickRank || bestRank(y.hand); s.onchange = () => { pickRank = +s.value; }; s.id = 'rankSel'; s.setAttribute('aria-label', 'Rank to call');
-    const b = el('button', 'btn', sel.length ? `Play ${sel.length} card${sel.length === 1 ? '' : 's'}` : 'Select cards'); b.disabled = !sel.length;
+    const b = el('button', 'btn', sel.length ? `Play ${sel.length}` : 'Select cards'); b.disabled = !sel.length;
     b.onclick = () => { act('open', { rank: +s.value, cards: sel.slice() }); sel = []; pickRank = null; };
     ct.appendChild(s); ct.appendChild(b);
   } else if (resp) {
-    if (!y.own) { const c = el('button', 'btn danger', 'Call bluff'); c.disabled = !y.canCall; c.onclick = () => act('call'); ct.appendChild(c); }
-    const a = el('button', 'btn', sel.length ? `Add ${sel.length} card${sel.length === 1 ? '' : 's'}` : 'Add cards'); a.disabled = !sel.length;
+    if (!y.own) { const c = el('button', 'btn red', 'Call bluff'); c.disabled = !y.canCall; c.onclick = () => act('call'); ct.appendChild(c); }
+    const a = el('button', 'btn dark', sel.length ? `Add ${sel.length}` : 'Add 1–2'); a.disabled = !sel.length;
     a.onclick = () => { act('add', { cards: sel.slice() }); sel = []; };
-    const p = el('button', 'btn ghost', 'Pass'); p.onclick = () => act('pass');
+    const p = el('button', 'btn green', 'Pass'); p.onclick = () => act('pass');
     ct.appendChild(a); ct.appendChild(p);
   }
 }
@@ -161,8 +188,10 @@ function renderBluff() {
 /* ---------- JACK THIEF ---------- */
 function renderJack() {
   const g = S.g, y = g.you; $('ev').textContent = g.event ? g.event.text : '';
+  $('panel').style.display = '';
   const th = $('thrown'); th.textContent = ''; g.thrown.slice().sort((a, b) => rank(a) - rank(b)).forEach(c => th.appendChild(cardEl(c, { mini: true })));
-  $('thrownCount').textContent = `Thrown away: ${g.thrown.length} card${g.thrown.length === 1 ? '' : 's'}`;
+  th.style.setProperty('--cw', '30px');
+  $('thrownCount').textContent = g.thrown.length; $('thrownLbl').textContent = g.thrown.length === 1 ? 'card thrown away' : 'cards thrown away';
   $('sortTimer').style.display = g.stage === 'sort' ? 'block' : 'none';
   const fan = $('fan'); fan.textContent = ''; const ct = $('jackCtrl'); ct.textContent = '';
   const pairMode = (g.stage === 'sort' && !y.done) || y.resolving;
@@ -175,15 +204,15 @@ function renderJack() {
     if (sel.length === 2) { act('throw', { cards: sel.slice() }); sel = []; }
     render();
   } });
-  if (y.resolving && y.drawn) { const hl = [...hand.children][y.hand.indexOf(y.drawn)]; if (hl) hl.style.outline = '3px dashed var(--gold)'; }
+  if (y.resolving && y.drawn) { const hl = [...hand.children][y.hand.indexOf(y.drawn)]; if (hl) hl.classList.add('pick'); }
   let hint = '';
   if (g.stage === 'sort') { hint = y.done ? 'Waiting for the others to finish sorting…' : 'Tap two cards of the same rank to throw the pair away. When none are left, press Done.'; }
   else if (y.mustDraw) { hint = `Your turn: take one card from ${nameOf(g.pick.fromId)}’s hand.`; for (let i = 0; i < g.pick.n; i++) { const b = backEl(); b.setAttribute('role', 'button'); b.tabIndex = 0; const go = () => act('draw', { i }); b.onclick = go; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') go(); }; fan.appendChild(b); } }
   else if (y.resolving) { hint = `You drew ${rlabel(rank(y.drawn))}${SYM[suit(y.drawn)]}. Throw any new pair, then press Done.`; }
   else if (g.pick) { hint = `${nameOf(g.pick.pid)} is drawing from ${nameOf(g.pick.fromId)}…`; }
   else if (g.stage === 'settle' || g.stage === 'resolve') { hint = g.turn ? `${nameOf(g.turn)} is throwing pairs…` : ''; }
-  $('hint').textContent = hint;
-  if (pairMode) { const d = el('button', 'btn', 'Done'); d.disabled = y.pairs; d.title = y.pairs ? 'Throw your pairs first' : ''; d.onclick = () => act('done'); ct.appendChild(d); if (y.pairs) ct.appendChild(el('span', 'small', 'You still hold a pair')); }
+  $('hint').textContent = hint; $('panel').style.display = hint || pairMode ? '' : 'none';
+  if (pairMode) { const d = el('button', 'btn green', 'Done'); d.disabled = y.pairs; d.title = y.pairs ? 'Throw your pairs first' : ''; d.onclick = () => act('done'); ct.appendChild(d); if (y.pairs) ct.appendChild(el('span', 'small', 'You still hold a pair')); }
 }
 
 /* ---------- game over ---------- */
