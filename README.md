@@ -2,6 +2,11 @@
 
 Real-time multiplayer Thulla for 3–8 players. Node.js + WebSockets, no database, no build step.
 
+## Site pages
+- `/` home page (Play button, the three games, how it works) · `/play` the live Bhabhi Thulla game (with an about/features/controls text section under the table)
+- `/games/bhabhi-thulla`, `/games/bluff`, `/games/jack-thief` long-form rules & strategy guides · `/blog` updates · `/about` · `/privacy`
+- Static HTML in `public/` with shared `site.css`; extensionless URLs are served by `server.js`. Old invite links `/?room=CODE` are forwarded to `/play?room=CODE`.
+
 ## Run locally
 ```
 npm install
