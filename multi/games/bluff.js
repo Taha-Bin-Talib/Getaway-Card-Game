@@ -1,7 +1,7 @@
 'use strict';
 // BLUFF — 3–10 players. All cards are dealt; the holder of A♠ opens.
 // A round: the opener puts 1–4 cards face-down and names a rank ("2 Aces"). Then, one player at a time, the next
-// player may CALL BLUFF on the last play, ADD 1 or 2 more face-down cards to the pile (the claim grows, same rank),
+// player may CALL BLUFF on the last play, ADD 1 to 4 more face-down cards to the pile (the claim grows, same rank),
 // or PASS. If everybody else passes, the player who made the last play gets another go (they can't call themselves):
 // they may ADD more, which starts the passing round again, or PASS. Only when they pass too (N-1 passes + their own)
 // is the pile thrown away and they open a new round.
@@ -17,7 +17,7 @@ const cfg = {
   TURN_MS: num(process.env.TURN_MS, 60000),
   REVEAL_MS: num(process.env.REVEAL_MS, 3500),
   BOT_MS: Math.max(1, num(process.env.BOT_MS, 4000)),
-  MAX_OPEN: 4, MAX_ADD: 2,
+  MAX_OPEN: 4, MAX_ADD: 4,
 };
 const byId = (room, id) => room.players.find(p => p.id === id);
 const holders = room => room.players.filter(p => p.hand.length > 0);
@@ -230,7 +230,7 @@ function action(room, p, m) {
       if (g.stage !== 'respond' || g.turn !== p.id) return 'It is not your turn.';
       const cards = Array.isArray(m.cards) ? m.cards.map(String) : [];
       if (!room.players.some(q => q !== p && q.hand.length)) return 'Nobody is left to bluff — call or pass.';
-      if (!validCards(p, cards, cfg.MAX_ADD)) return `Add 1 or ${cfg.MAX_ADD} cards from your hand.`;
+      if (!validCards(p, cards, cfg.MAX_ADD)) return `Add 1 to ${cfg.MAX_ADD} cards from your hand.`;
       clearTimeout(room.timer); room.timer = null;
       add(room, p, cards);
       return null;
