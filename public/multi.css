@@ -146,3 +146,18 @@ details summary{cursor:pointer;font-weight:700}details ul{margin:8px 0 0;padding
 .otable{min-height:190px}
 .hand{max-height:32dvh}
 .center{gap:2px}.bigcount{font-size:2.2rem}
+
+/* wide landing layout like the Thulla page */
+.sitebar{max-width:980px}
+#home.screen,#lobby.screen{max-width:980px}
+#home .panel{padding:18px 20px;border-radius:16px}
+#home .row{flex-wrap:nowrap}#home .row>*{flex:1 1 auto;min-width:0}
+#home .row .btn:only-child{width:100%}
+#home input{min-height:50px}
+#home .btn{min-height:50px}
+h1{letter-spacing:.5px}h1 span{color:var(--gold)}
+.seo{max-width:980px;margin:34px auto 0;padding:0 16px 48px;line-height:1.65}
+.seo h2{font-size:1.5rem;margin:1.6em 0 .5em}.seo p,.seo li{opacity:.92}.seo a{color:var(--gold)}
+.seo table{border-collapse:collapse;width:100%;font-size:.95rem}.seo th,.seo td{border:1px solid rgba(255,255,255,.18);padding:7px 10px;text-align:left}.seo th{background:rgba(0,0,0,.3)}
+.ingame .seo{display:none}
+#home .row .btn{white-space:nowrap}#home .row #join{flex:0 0 40%}
