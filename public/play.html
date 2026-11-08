@@ -53,6 +53,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 .card .tl{top:.32em;left:.4em}
 .card .br{bottom:.32em;right:.4em;transform:rotate(180deg)}
 .card .mid{position:absolute;inset:0;display:grid;place-items:center;font-size:2.1em}
+.card .su{display:block;width:.85em;height:.85em;margin:.08em auto 0}.card .mid .su{width:.8em;height:.8em;margin:0}
 .card.back{background:repeating-linear-gradient(45deg,#1e56a8 0 .45em,#173f7d .45em .9em);border:calc(var(--cw)*.07) solid #fff}
 .card.back>*{display:none}
 
@@ -337,6 +338,8 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 </section>
 <script>
 const $ = id => document.getElementById(id);
+const SVGP = {"H": "<path d=\"M50 92C18 66 4 49 4 30 4 14 16 4 30 4 40 4 47 10 50 18 53 10 60 4 70 4 84 4 96 14 96 30 96 49 82 66 50 92Z\"/>", "D": "<path d=\"M50 2C60 22 76 38 94 50 76 62 60 78 50 98 40 78 24 62 6 50 24 38 40 22 50 2Z\"/>", "S": "<path d=\"M50 3C58 24 92 42 92 64 92 78 81 86 69 86 61 86 55 82 52 77 52 87 56 93 63 97L37 97C44 93 48 87 48 77 45 82 39 86 31 86 19 86 8 78 8 64 8 42 42 24 50 3Z\"/>", "C": "<circle cx=\"50\" cy=\"28\" r=\"22\"/><circle cx=\"26\" cy=\"62\" r=\"22\"/><circle cx=\"74\" cy=\"62\" r=\"22\"/><path d=\"M44 52H56C56 76 60 88 68 97H32C40 88 44 76 44 52Z\"/>"};
+const suitSvg = s => `<svg class="su" viewBox="0 0 100 100" aria-hidden="true" fill="currentColor">${SVGP[s]}</svg>`;
 const SYM = {S:'♠',H:'♥',D:'♦',C:'♣'}, RN = {11:'J',12:'Q',13:'K',14:'A'};
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ws, S = null, prevPhase = null, session = null, queue = [], lastSeq = null, toastTimer;
@@ -440,7 +443,7 @@ function cardEl(id, cls){
   if (id === 'back') { d.className = 'card back ' + (cls||''); return d; }
   const r = parseInt(id), s = id.slice(-1), l = RN[r] || r;
   d.className = 'card ' + (s==='H'||s==='D' ? 'red ' : '') + (cls||'');
-  d.innerHTML = `<span class="tl">${l}<br>${SYM[s]}</span><span class="mid">${SYM[s]}</span><span class="br">${l}<br>${SYM[s]}</span>`;
+  d.innerHTML = `<span class="tl">${l}${suitSvg(s)}</span><span class="mid">${suitSvg(s)}</span><span class="br">${l}${suitSvg(s)}</span>`;
   d.dataset.id = id;
   return d;
 }
