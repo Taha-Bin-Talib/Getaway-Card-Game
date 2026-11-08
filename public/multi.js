@@ -4,6 +4,8 @@
 const GAME = document.body.dataset.game;                 // 'bluff' | 'jackthief'
 const SLUG = { bluff: 'bluff', jackthief: 'jack-thief' };
 const TITLE = { bluff: 'Bluff', jackthief: 'Jack Thief' };
+const SVGP = {"H": "<path d=\"M50 92C18 66 4 49 4 30 4 14 16 4 30 4 40 4 47 10 50 18 53 10 60 4 70 4 84 4 96 14 96 30 96 49 82 66 50 92Z\"/>", "D": "<path d=\"M50 2C60 22 76 38 94 50 76 62 60 78 50 98 40 78 24 62 6 50 24 38 40 22 50 2Z\"/>", "S": "<path d=\"M50 3C58 24 92 42 92 64 92 78 81 86 69 86 61 86 55 82 52 77 52 87 56 93 63 97L37 97C44 93 48 87 48 77 45 82 39 86 31 86 19 86 8 78 8 64 8 42 42 24 50 3Z\"/>", "C": "<circle cx=\"50\" cy=\"28\" r=\"22\"/><circle cx=\"26\" cy=\"62\" r=\"22\"/><circle cx=\"74\" cy=\"62\" r=\"22\"/><path d=\"M44 52H56C56 76 60 88 68 97H32C40 88 44 76 44 52Z\"/>"};
+const suitSvg = s => `<svg class="su" viewBox="0 0 100 100" aria-hidden="true" fill="currentColor">${SVGP[s]}</svg>`;
 const RN = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }, SYM = { S: '♠', H: '♥', D: '♦', C: '♣' };
 const RNAME = { 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Jack', 12: 'Queen', 13: 'King', 14: 'Ace' };
 const rank = c => parseInt(c, 10), suit = c => /[SHDC]/.exec(c)[0];
@@ -21,8 +23,8 @@ function show(id) { document.querySelectorAll('.screen').forEach(s => s.classLis
 const nameOf = id => { const p = S && S.players.find(q => q.id === id); return p ? p.name : '?'; };
 function cardEl(c, opts = {}) {
   const r = rank(c), s = suit(c), e = el(opts.tag || 'div', 'card' + (s === 'H' || s === 'D' ? ' red' : '') + (opts.mini ? ' mini' : '') + (opts.sel ? ' sel' : '') + (opts.dim ? ' dim' : ''));
-  const tl = el('div', 'tl', rlabel(r)); tl.appendChild(el('small', null, SYM[s])); e.appendChild(tl); e.appendChild(el('div', 'mid', SYM[s]));
-  const br = el('div', 'br', rlabel(r)); br.appendChild(el('small', null, SYM[s])); e.appendChild(br);
+  const tl = el('div', 'tl', rlabel(r)); const t1 = el('small'); t1.innerHTML = suitSvg(s); tl.appendChild(t1); e.appendChild(tl); const mid = el('div', 'mid'); mid.innerHTML = suitSvg(s); e.appendChild(mid);
+  const br = el('div', 'br', rlabel(r)); const t2 = el('small'); t2.innerHTML = suitSvg(s); br.appendChild(t2); e.appendChild(br);
   e.setAttribute('aria-label', `${RNAME[r]} of ${{ S: 'spades', H: 'hearts', D: 'diamonds', C: 'clubs' }[s]}`);
   return e;
 }
@@ -208,7 +210,7 @@ function renderJack() {
   let hint = '';
   if (g.stage === 'sort') { hint = y.done ? 'Waiting for the others to finish sorting…' : 'Tap two cards of the same rank to throw the pair away. When none are left, press Done.'; }
   else if (y.mustDraw) { hint = `Your turn: take one card from ${nameOf(g.pick.fromId)}’s hand.`; for (let i = 0; i < g.pick.n; i++) { const b = backEl(); b.setAttribute('role', 'button'); b.tabIndex = 0; const go = () => act('draw', { i }); b.onclick = go; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') go(); }; fan.appendChild(b); } }
-  else if (y.resolving) { hint = `You drew ${rlabel(rank(y.drawn))}${SYM[suit(y.drawn)]}. Throw any new pair, then press Done.`; }
+  else if (y.resolving) { hint = `You drew ${rlabel(rank(y.drawn))}${SYM[suit(y.drawn)]}\uFE0E. Throw any new pair, then press Done.`; }
   else if (g.pick) { hint = `${nameOf(g.pick.pid)} is drawing from ${nameOf(g.pick.fromId)}…`; }
   else if (g.stage === 'settle' || g.stage === 'resolve') { hint = g.turn ? `${nameOf(g.turn)} is throwing pairs…` : ''; }
   $('hint').textContent = hint; $('panel').style.display = hint || pairMode ? '' : 'none';

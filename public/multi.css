@@ -172,3 +172,5 @@ h1{letter-spacing:.5px}h1 span{color:var(--gold)}
 .card.mini .tl small{display:block}
 .card.back{background:repeating-linear-gradient(45deg,#1e56a8 0 .45em,#173f7d .45em .9em);border:calc(var(--cw)*.07) solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.4)}
 .card.back::after,.card.back>*{display:none}
+.card .su{display:block;width:.85em;height:.85em;margin:.08em auto 0}.card .mid .su{width:.8em;height:.8em;margin:0}
+.card .tl small,.card .br small{line-height:0}
