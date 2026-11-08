@@ -161,3 +161,14 @@ h1{letter-spacing:.5px}h1 span{color:var(--gold)}
 .seo table{border-collapse:collapse;width:100%;font-size:.95rem}.seo th,.seo td{border:1px solid rgba(255,255,255,.18);padding:7px 10px;text-align:left}.seo th{background:rgba(0,0,0,.3)}
 .ingame .seo{display:none}
 #home .row .btn{white-space:nowrap}#home .row #join{flex:0 0 40%}
+
+/* card style identical to the Thulla table: bold system sans, stacked rank + suit, plain glyphs */
+.card{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:700;background:#fff;color:#101418;border-radius:calc(var(--cw)*.12);font-size:calc(var(--cw)*.27)}
+.card.red{color:#d32f2f}
+.card .tl,.card .br{font-size:calc(var(--cw)*.27);line-height:1.05;left:.4em;top:.32em}
+.card .br{left:auto;top:auto;right:.4em;bottom:.32em}
+.card .tl small,.card .br small{display:block;font-size:1em;margin-top:0}
+.card .mid{font-family:inherit;font-size:calc(var(--cw)*.567)}
+.card.mini .tl small{display:block}
+.card.back{background:repeating-linear-gradient(45deg,#1e56a8 0 .45em,#173f7d .45em .9em);border:calc(var(--cw)*.07) solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+.card.back::after,.card.back>*{display:none}
