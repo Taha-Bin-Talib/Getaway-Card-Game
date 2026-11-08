@@ -195,7 +195,8 @@ function renderJack() {
   const fan = $('fan'); fan.textContent = ''; const ct = $('jackCtrl'); ct.textContent = '';
   const pairMode = (g.stage === 'sort' && !y.done) || y.resolving;
   const hand = $('hand');
-  drawHand(hand, y.hand, 2, { onTap: c => {
+  const sortedHand = y.hand.slice().sort((a, b) => rank(a) - rank(b));
+  drawHand(hand, sortedHand, 2, { onTap: c => {
     if (!pairMode) return;
     if (sel.includes(c)) sel = sel.filter(x => x !== c);
     else if (sel.length && rank(sel[0]) !== rank(c)) sel = [c];
@@ -203,7 +204,7 @@ function renderJack() {
     if (sel.length === 2) { act('throw', { cards: sel.slice() }); sel = []; }
     render();
   } });
-  if (y.resolving && y.drawn) { const hl = [...hand.children][y.hand.indexOf(y.drawn)]; if (hl) hl.classList.add('pick'); }
+  if (y.resolving && y.drawn) { const hl = [...hand.children][sortedHand.indexOf(y.drawn)]; if (hl) hl.classList.add('pick'); }
   let hint = '';
   if (g.stage === 'sort') { hint = y.done ? 'Waiting for the others to finish sorting…' : 'Tap two cards of the same rank to throw the pair away. When none are left, press Done.'; }
   else if (y.mustDraw) { hint = `Your turn: take one card from ${nameOf(g.pick.fromId)}’s hand.`; for (let i = 0; i < g.pick.n; i++) { const b = backEl(); b.setAttribute('role', 'button'); b.tabIndex = 0; const go = () => act('draw', { i }); b.onclick = go; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') go(); }; fan.appendChild(b); } }
