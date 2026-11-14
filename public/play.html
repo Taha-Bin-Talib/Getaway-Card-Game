@@ -20,7 +20,7 @@
 :root{--felt:#0d6b45;--felt2:#06402a;--gold:#f5c542;--ink:#101418;--red:#d32f2f;--panel:rgba(0,0,0,.35)}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt2) 75%) fixed;min-height:100dvh;overflow-x:hidden}
+body{font-family:Georgia,"Times New Roman",serif;color:#fff;background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt2) 75%) fixed;min-height:100dvh;overflow-x:hidden}
 button{font:inherit;cursor:pointer}
 .screen{display:none;max-width:980px;margin:0 auto;padding:16px}
 .screen.on{display:block}
@@ -47,7 +47,7 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 .small{font-size:.85rem;opacity:.8}
 
 /* ---------- cards ---------- */
-.card{--cw:64px;width:var(--cw);height:calc(var(--cw)*1.43);font-size:calc(var(--cw)*.27);background:#fff;color:var(--ink);border-radius:calc(var(--cw)*.12);position:relative;box-shadow:0 2px 6px rgba(0,0,0,.45);font-weight:700;user-select:none;flex:0 0 auto}
+.card{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--cw:64px;width:var(--cw);height:calc(var(--cw)*1.43);font-size:calc(var(--cw)*.27);background:#fff;color:var(--ink);border-radius:calc(var(--cw)*.12);position:relative;box-shadow:0 2px 6px rgba(0,0,0,.45);font-weight:700;user-select:none;flex:0 0 auto}
 .card.red{color:var(--red)}
 .card .tl,.card .br{position:absolute;line-height:1.05;text-align:center}
 .card .tl{top:.32em;left:.4em}
