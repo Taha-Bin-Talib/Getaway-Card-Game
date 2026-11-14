@@ -141,6 +141,7 @@ function disconnect(ws) {
 
 function handle(ws, m) {
   if (!m || typeof m.t !== 'string') return;
+  if ((m.t === 'create' || m.t === 'join') && ws.room && rooms.get(ws.room.code) === ws.room) return;      // already in a room: ignore a double tap
   if (m.t === 'create') return createRoom(ws, m);
   if (m.t === 'join') return joinRoom(ws, m);
   if (m.t === 'rejoin') return rejoin(ws, m);
