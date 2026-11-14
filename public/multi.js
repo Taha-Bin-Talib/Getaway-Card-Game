@@ -47,7 +47,7 @@ setInterval(() => send({ t: 'ping' }), 25000);
 
 function onMsg(m) {
   switch (m.t) {
-    case 'joined': session = { code: m.code, token: m.token }; store.set(SKEY, JSON.stringify(session)); me = m.id; catalog = m.catalog || []; break;
+    case 'joined': if (S && S.you && S.you.spectator && !m.spectator) toast('You have a seat at the table!'); session = { code: m.code, token: m.token }; store.set(SKEY, JSON.stringify(session)); me = m.id; catalog = m.catalog || []; break;
     case 'state': if (!session) return; S = m.s; me = S.you.id; if (S.game !== GAME) { location.replace('/play/' + SLUG[S.game] + '?room=' + S.code); return; } render(); break;
     case 'error': toast(m.m); $('homeErr').textContent = m.m; break;
     case 'gone': session = null; store.del(SKEY); S = null; show('home'); break;
@@ -72,13 +72,33 @@ function render() {
   show('game'); $('over').classList.toggle('on', S.phase === 'over');
   renderSeats(); renderTimer();
   (GAME === 'bluff' ? renderBluff : renderJack)();
+  if (isSpec()) { sel = []; $('hand').textContent = ''; $('bluffCtrl') && ($('bluffCtrl').textContent = ''); $('jackCtrl') && ($('jackCtrl').textContent = ''); document.querySelector('.hand-lbl .pill').textContent = '👁 You’re spectating — no cards are shown'; $('panel').style.display = $('hint').textContent || ($('pt') && $('pt').textContent) ? '' : 'none'; }
+  else document.querySelector('.hand-lbl .pill').textContent = 'Your hand · only you';
   if (S.phase === 'over') renderOver();
+  renderEye();
+}
+const isSpec = () => !!(S && S.you && S.you.spectator);
+function renderEye() {
+  const sp = (S && S.spectators) || [], b = $('eye'), pop = $('eyePop');
+  document.body.classList.toggle('spec', isSpec());
+  b.style.display = sp.length ? 'flex' : 'none'; $('eyeN').textContent = sp.length;
+  b.title = sp.length + ' spectating';
+  pop.textContent = ''; pop.appendChild(el('b', null, sp.length + (sp.length === 1 ? ' person is' : ' people are') + ' spectating'));
+  sp.forEach(q => pop.appendChild(el('div', null, q.name + (q.id === me ? ' (you)' : '')))); if (!sp.length) pop.classList.remove('on');
+}
+function renderJoin() {
+  const sp = isSpec(), j = sp ? S.you.join : null, n = S.players.length;
+  const b = $('joinTable'), b2 = $('joinTable2');
+  b.style.display = sp && S.phase === 'lobby' ? '' : 'none';
+  if (sp && S.phase === 'lobby') { b.disabled = j !== 'now'; b.textContent = j === 'now' ? 'Take a seat' : `Table full (${n}/8)`; b.onclick = () => send({ t: 'joinTable' }); }
+  b2.style.display = sp && S.phase === 'over' ? '' : 'none';
+  if (sp && S.phase === 'over') { b2.textContent = j === 'queued' ? 'In line for next game ✓ (tap to cancel)' : 'Join next game'; b2.onclick = () => send({ t: 'joinTable' }); }
 }
 function renderLobby() {
   show('lobby'); sel = [];
   $('lobbyTitle').textContent = TITLE[GAME] + ' — waiting room';
   $('lobbyCode').textContent = S.code;
-  const host = S.hostId === me, eng = catalog.find(c => c.id === GAME) || { min: 2, max: 10, settings: [] };
+  const host = S.hostId === me, eng = catalog.find(c => c.id === GAME) || { min: 2, max: 8, settings: [] };
   const ul = $('plist'); ul.textContent = '';
   S.players.forEach(p => {
     const li = el('li'); li.appendChild(el('span', 'grow', p.name + (p.id === me ? ' (you)' : '')));
@@ -90,12 +110,16 @@ function renderLobby() {
   const st = $('settings'); st.textContent = '';
   (eng.settings || []).forEach(sp => {
     const wrap = el('div'); wrap.appendChild(el('label', 'small', sp.label));
-    const sel_ = el('select'); sel_.disabled = !host;
+    const sel_ = el('select'); sel_.disabled = !host || isSpec();
     sp.options.forEach(o => { const op = el('option', null, o.label); op.value = o.value; if (S.settings[sp.key] === o.value) op.selected = true; sel_.appendChild(op); });
     sel_.onchange = () => send({ t: 'settings', key: sp.key, value: sel_.value });
     wrap.appendChild(sel_); st.appendChild(wrap);
   });
-  const start = $('start'); start.style.display = host ? '' : 'none'; start.disabled = S.players.length < eng.min;
+  const sp = S.spectators || [], spec = isSpec();
+  $('specPanel').style.display = sp.length ? '' : 'none'; $('specTitle').textContent = '👁 Spectating (' + sp.length + '/2)'; $('specNames').textContent = sp.map(q => q.name + (q.id === me ? ' (you)' : '')).join(', ');
+  const start = $('start'); start.style.display = host && !spec ? '' : 'none'; start.disabled = S.players.length < eng.min;
+  renderJoin(); renderEye();
+  if (spec) { $('lobbyHint').textContent = S.you.join === 'now' ? 'You’re spectating. A seat is free — you can take it.' : 'You’re spectating. The table is full (8/8).'; return; }
   $('lobbyHint').textContent = S.players.length < eng.min ? `${TITLE[GAME]} needs at least ${eng.min} players — share the code or invite link.` : (host ? 'Everyone here? Press Start.' : 'Waiting for the host to start…');
 }
 
@@ -222,8 +246,11 @@ function renderOver() {
   const g = S.g, host = S.hostId === me; let t = '', sub = '';
   if (GAME === 'bluff') { t = g.loserId === me ? 'You lost this one' : `${nameOf(g.loserId)} is the Bluff loser`; sub = g.loserId === me ? 'You were left holding cards. Better luck next time!' : (g.winnerId === me ? 'You got out first — well played!' : 'You got out safely.'); }
   else { t = g.thiefId ? (g.thiefId === me ? 'You are the Jack Thief!' : `${nameOf(g.thiefId)} is the Jack Thief!`) : 'Nobody holds the Jack — a draw!'; sub = g.thiefId === me ? 'You were left holding the unpaired Jack.' : 'You got rid of all your cards.'; }
+  if (isSpec()) { sub = 'You were spectating.'; if (GAME === 'jackthief' && !g.thiefId) t = t; }
   $('overTitle').textContent = t; $('overSub').textContent = sub;
-  $('again').style.display = host ? '' : 'none'; $('overWait').style.display = host ? 'none' : 'block';
+  const spec = isSpec();
+  $('again').style.display = host && !spec ? '' : 'none'; $('overWait').style.display = host && !spec ? 'none' : 'block';
+  renderJoin();
 }
 
 /* ---------- wire up ---------- */
@@ -231,7 +258,9 @@ $('create').onclick = () => { const n = getName(); if (!n) { $('homeErr').textCo
 $('join').onclick = () => { const n = getName(), c = $('code').value.trim().toUpperCase(); if (!n) { $('homeErr').textContent = 'Enter your name first.'; return; } if (c.length !== 4) { $('homeErr').textContent = 'Enter the 4-letter room code.'; return; } $('homeErr').textContent = ''; connect(() => send({ t: 'join', name: n, code: c })); };
 $('start').onclick = () => send({ t: 'start' });
 $('copyLink').onclick = () => { const link = location.origin + location.pathname + '?room=' + S.code; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast('Invite link copied'), () => toast(link)); };
-document.querySelectorAll('[data-leave]').forEach(b => { b.onclick = () => { if (S && S.phase === 'playing' && !confirm('Leave the game? The computer will play your cards.')) return; send({ t: 'leave' }); reset(); }; });
+document.querySelectorAll('[data-leave]').forEach(b => { b.onclick = () => { if (S && S.phase === 'playing' && !isSpec() && !confirm('Leave the game? The computer will play your cards.')) return; send({ t: 'leave' }); reset(); }; });
+$('eye').onclick = e => { e.stopPropagation(); $('eyePop').classList.toggle('on'); };
+document.addEventListener('click', () => $('eyePop').classList.remove('on'));
 $('again').onclick = () => send({ t: 'rematch' });
 $('chatBtn').onclick = () => { chatOpen = !chatOpen; $('chat').classList.toggle('on', chatOpen); if (chatOpen) { unread = 0; $('chatBadge').style.display = 'none'; $('chatIn').focus(); } };
 $('chatForm').onsubmit = e => { e.preventDefault(); const t = $('chatIn').value.trim(); if (t) send({ t: 'chat', text: t }); $('chatIn').value = ''; };

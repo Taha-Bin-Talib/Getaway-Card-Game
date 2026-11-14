@@ -2,8 +2,8 @@
 (function () {
   var GAMES = [
     { name: 'Bhabhi Thulla', href: '/play', meta: '3–8 players · shedding game', text: 'Follow suit or throw a Thulla — the last player holding cards is the Bhabhi.' },
-    { name: 'Bluff', href: '/play/bluff', meta: '3–10 players · bluffing game', text: 'Play cards face down, name a rank, and call out anyone you think is lying.' },
-    { name: 'Jack Thief', href: '/play/jack-thief', meta: '2–10 players · matching game', text: 'Pair up your cards and avoid being left holding the lonely Jack.' }
+    { name: 'Bluff', href: '/play/bluff', meta: '3–8 players · bluffing game', text: 'Play cards face down, name a rank, and call out anyone you think is lying.' },
+    { name: 'Jack Thief', href: '/play/jack-thief', meta: '2–8 players · matching game', text: 'Pair up your cards and avoid being left holding the lonely Jack.' }
   ];
   var css = '.gm-back{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}.gm-back.on{display:flex}' +
     '.gm-box{background:#0a3d29;border:2px solid #f5c542;border-radius:20px;padding:22px 20px 18px;max-width:440px;width:100%;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:92vh;overflow:auto}' +
