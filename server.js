@@ -22,7 +22,7 @@ const MIME = {
 
 /* ---------- card helpers ---------- */
 const SUITS = ['S', 'H', 'D', 'C'];
-const MIN_PLAYERS = 3, MAX_PLAYERS = 8;
+const MIN_PLAYERS = 3, MAX_PLAYERS = 8, MAX_SPECTATORS = 2;
 const rank = c => parseInt(c, 10);
 const suit = c => c.slice(-1);
 const RN = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
@@ -385,7 +385,9 @@ function view(room, p) {
     lastTrick: room.lastTrick,
     event: room.event,
     players: room.players.map(q => ({ id: q.id, name: q.name, count: q.hand.length, connected: q.connected, out: !!q.out, place: q.place || 0 })),
+    spectators: (room.spectators || []).map(q => ({ id: q.id, name: q.name })),
     you: {
+      spectator: !!p.spectator, join: p.spectator ? joinMode(room, p) : null,
       id: p.id, hand: p.hand, legal: legalCards(room, p), reveal: p.reveal,
       canRequest: !!target, requestTarget: target ? target.name : null,
       mustPick: !!(pick && pick.pid === p.id),
@@ -397,13 +399,49 @@ function send(ws, o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o))
 function broadcast(room) {
   room.lastActive = Date.now();
   for (const p of room.players) if (p.ws) send(p.ws, { t: 'state', s: view(room, p) });
+  for (const sp of room.spectators || []) if (sp.ws) send(sp.ws, { t: 'state', s: view(room, sp) });
+}
+const everyone = room => [...room.players, ...(room.spectators || [])];
+
+/* ---------- spectators: watch without seeing anyone's cards; at most MAX_SPECTATORS per room ---------- */
+function joinMode(room, sp) {          // what the spectator's "Join table" button may do right now
+  if (room.phase === 'lobby') return room.players.length < MAX_PLAYERS ? 'now' : 'full';
+  if (room.phase === 'over') return sp.queued ? 'queued' : 'queue';
+  return 'wait';
+}
+function addSpectator(room, ws, name) {
+  const sp = { id: uid(), token: uid() + uid(), name: cleanName(name, room), ws, connected: true, spectator: true, hand: [], out: false, place: 0, reveal: null, queued: false };
+  (room.spectators = room.spectators || []).push(sp);
+  ws.ctx = { room, p: sp };
+  send(ws, { t: 'joined', code: room.code, token: sp.token, spectator: true });
+  send(ws, { t: 'chatlog', log: room.chat });
+  return sp;
+}
+function dropSpectator(room, sp) {
+  clearTimeout(sp.dropT);
+  room.spectators = (room.spectators || []).filter(q => q !== sp);
+}
+function promoteSpectator(room, sp) {  // spectator takes a free seat: becomes a normal player with a fresh token
+  dropSpectator(room, sp);
+  const ws = sp.ws;
+  const p = { id: uid(), token: uid() + uid(), name: sp.name, ws, connected: !!ws, hand: [], out: false, place: 0, reveal: null, requestedThisTurn: false };
+  room.players.push(p);
+  if (!room.hostId) room.hostId = p.id;
+  if (ws) { ws.ctx = { room, p }; send(ws, { t: 'joined', code: room.code, token: p.token }); }
+  return p;
+}
+function closeRoom(room) {
+  clearTimeout(room.timer);
+  for (const sp of room.spectators || []) { clearTimeout(sp.dropT); if (sp.ws) { send(sp.ws, { t: 'closed' }); sp.ws.ctx = null; } }
+  room.spectators = [];
+  rooms.delete(room.code);
 }
 
 /* ---------- connection handling ---------- */
 const cleanName = (n, room) => {
   let base = String(n || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16) || 'Player';
   let name = base, i = 2;
-  while (room && room.players.some(p => p.name.toLowerCase() === name.toLowerCase())) name = `${base} ${i++}`;
+  while (room && everyone(room).some(p => p.name.toLowerCase() === name.toLowerCase())) name = `${base} ${i++}`;
   return name;
 };
 
@@ -426,7 +464,7 @@ function reassignHost(room) {                       // keep a connected host so 
 
 function removeFromLobby(room, p) {
   room.players = room.players.filter(q => q !== p);
-  if (!room.players.length) { rooms.delete(room.code); return; }
+  if (!room.players.length) { closeRoom(room); return; }
   if (room.hostId === p.id) room.hostId = room.players[0].id;
 }
 
@@ -447,24 +485,42 @@ function handle(ws, m) {
   if (m.t === 'join') {
     const room = rooms.get(String(m.code || '').toUpperCase().trim());
     if (!room) return send(ws, { t: 'error', m: 'Room not found. Check the code.' });
-    if (room.phase !== 'lobby') return send(ws, { t: 'error', m: 'That game has already started.' });
-    if (room.players.length >= MAX_PLAYERS) return send(ws, { t: 'error', m: 'Room is full (8 players max).' });
+    if (room.phase !== 'lobby' || room.players.length >= MAX_PLAYERS) {           // can't sit down: watch instead
+      if ((room.spectators || []).length >= MAX_SPECTATORS) return send(ws, { t: 'error', m: room.phase === 'lobby' ? 'The table is full and both spectator seats are taken.' : 'That game is in progress and both spectator seats are taken.' });
+      addSpectator(room, ws, m.name);
+      return broadcast(room);
+    }
     addPlayer(room, ws, m.name);
     return broadcast(room);
   }
   if (m.t === 'rejoin') {
     const room = rooms.get(String(m.code || '').toUpperCase());
-    const p = room && room.players.find(q => q.token === m.token);
+    const p = room && (room.players.find(q => q.token === m.token) || (room.spectators || []).find(q => q.token === m.token));
     if (!p) return send(ws, { t: 'rejoinFail' });
     if (p.ws && p.ws !== ws) { p.ws.ctx = null; try { p.ws.close(); } catch (e) {} }
-    p.ws = ws; p.connected = true; ws.ctx = { room, p };
-    send(ws, { t: 'joined', code: room.code, token: p.token });
+    p.ws = ws; p.connected = true; ws.ctx = { room, p }; clearTimeout(p.dropT);
+    send(ws, { t: 'joined', code: room.code, token: p.token, spectator: !!p.spectator });
     send(ws, { t: 'chatlog', log: room.chat });
     return broadcast(room);
   }
   if (!ws.ctx) return;
   const { room, p } = ws.ctx;
   const isHost = room.hostId === p.id;
+
+  if (p.spectator) {                                  // spectators may only chat, react, take a seat or leave
+    switch (m.t) {
+      case 'chat': case 'react': break;               // handled below (shared with players)
+      case 'joinTable': {
+        const mode = joinMode(room, p);
+        if (mode === 'now') { promoteSpectator(room, p); return broadcast(room); }
+        if (mode === 'queue') { p.queued = true; return broadcast(room); }
+        if (mode === 'queued') { p.queued = false; return broadcast(room); }
+        return send(ws, { t: 'error', m: mode === 'full' ? 'The table is full.' : 'You can take a seat when this game ends.' });
+      }
+      case 'leave': ws.ctx = null; dropSpectator(room, p); return broadcast(room);
+      default: return;
+    }
+  }
 
   switch (m.t) {
     case 'chat': {                                      // text chat (last 60 messages kept per room)
@@ -473,12 +529,12 @@ function handle(ws, m) {
       const msg = { id: p.id, name: p.name, text, ts: Date.now() };
       room.chat.push(msg); if (room.chat.length > 60) room.chat.shift();
       room.lastActive = Date.now();
-      for (const q of room.players) if (q.ws) send(q.ws, { t: 'chat', m: msg });
+      for (const q of everyone(room)) if (q.ws) send(q.ws, { t: 'chat', m: msg });
       return;
     }
     case 'react': {                                     // quick emoji reaction (not stored)
       if (!REACTIONS.includes(m.e) || chatLimited(p)) return;
-      for (const q of room.players) if (q.ws) send(q.ws, { t: 'react', pid: p.id, name: p.name, e: m.e });
+      for (const q of everyone(room)) if (q.ws) send(q.ws, { t: 'react', pid: p.id, name: p.name, e: m.e });
       return;
     }
     case 'settings':
@@ -526,7 +582,8 @@ function handle(ws, m) {
       room.phase = 'lobby'; room.stage = 'lobby'; room.trick = null; room.event = null; room.lastTrick = null;
       room.players = room.players.filter(q => q.connected);
       room.players.forEach(q => { q.hand = []; q.out = false; q.place = 0; q.reveal = null; });
-      if (!room.players.some(q => q.id === room.hostId)) room.hostId = room.players[0].id;
+      if (!room.players.some(q => q.id === room.hostId) && room.players.length) room.hostId = room.players[0].id;
+      for (const sp of (room.spectators || []).filter(q => q.queued && q.connected)) { if (room.players.length < MAX_PLAYERS) promoteSpectator(room, sp); else sp.queued = false; }
       return broadcast(room);
     case 'leave': {
       ws.ctx = null;
@@ -586,6 +643,10 @@ wss.on('connection', ws => {
     const { room, p } = c;
     if (p.ws !== ws) return;
     p.ws = null; p.connected = false;
+    if (p.spectator) {                                  // short grace so a refresh can rejoin
+      p.dropT = setTimeout(() => { if (!p.connected) { dropSpectator(room, p); broadcast(room); } }, 15000); p.dropT.unref && p.dropT.unref();
+      return;
+    }
     if (room.phase === 'lobby') { removeFromLobby(room, p); if (rooms.has(room.code)) broadcast(room); }
     else { reassignHost(room); scheduleBot(room); broadcast(room); }
   });
@@ -595,7 +656,7 @@ setInterval(() => {
   wss.clients.forEach(ws => { if (!ws.isAlive) return ws.terminate(); ws.isAlive = false; ws.ping(); });
   const now = Date.now();
   for (const [code, room] of rooms) {
-    if (!room.players.some(p => p.connected) && now - room.lastActive > 30 * 60 * 1000) { clearTimeout(room.timer); rooms.delete(code); }
+    if (!room.players.some(p => p.connected) && now - room.lastActive > 30 * 60 * 1000) closeRoom(room);
   }
 }, 30000).unref();
 

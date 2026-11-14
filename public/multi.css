@@ -174,3 +174,14 @@ h1{letter-spacing:.5px}h1 span{color:var(--gold)}
 .card.back::after,.card.back>*{display:none}
 .card .su{display:block;width:.85em;height:.85em;margin:.08em auto 0}.card .mid .su{width:.8em;height:.8em;margin:0}
 .card .tl small,.card .br small{line-height:0}
+
+/* spectators */
+.gbtns{display:flex;gap:8px;align-items:center}
+.rbtn.eye{position:relative;display:flex;align-items:center;justify-content:center;color:var(--gold)}
+.rbtn.eye b{position:absolute;top:-6px;right:-6px;background:var(--gold);color:#1a1408;border-radius:10px;font-size:.7rem;min-width:18px;height:18px;line-height:18px;padding:0 4px;text-align:center}
+.eyepop{display:none;position:absolute;right:10px;top:58px;z-index:30;background:#10281f;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:.85rem;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:80vw}
+.eyepop.on{display:block}
+.eyepop b{display:block;color:var(--gold);margin-bottom:4px}
+body.spec #hand,body.spec #bluffCtrl,body.spec #jackCtrl{display:none}
+body.spec .hand-lbl .pill{border-color:var(--line);color:var(--txt)}
+#game{position:relative}

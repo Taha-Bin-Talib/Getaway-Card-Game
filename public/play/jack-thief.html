@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Play Jack Thief Online — Free Multiplayer Card Game | Jack of All</title>
-<meta name="description" content="Pair up your cards, draw from your neighbour and avoid being left holding the lonely Jack. Play online with 2 to 10 friends.">
+<meta name="description" content="Pair up your cards, draw from your neighbour and avoid being left holding the lonely Jack. Play online with 2 to 8 friends.">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/img/logo-192.png">
 <link rel="apple-touch-icon" href="/img/logo-180.png">
@@ -18,7 +18,7 @@
 
 <section id="home" class="screen on">
   <h1>Jack <span>Thief</span></h1>
-  <p class="sub">Pair up your cards, draw from your neighbour and avoid being left holding the lonely Jack. Play online with 2 to 10 friends.</p>
+  <p class="sub">Pair up your cards, draw from your neighbour and avoid being left holding the lonely Jack. Play online with 2 to 8 friends.</p>
   <div class="panel">
     <label class="small">Your name</label>
     <input id="name" maxlength="14" placeholder="e.g. Saad" autocomplete="nickname">
@@ -29,7 +29,7 @@
     </div>
     <div class="err" id="homeErr"></div>
   </div>
-  <div class="panel"><details><summary>How to play</summary><ul><li>2 to 10 players. One random Jack is removed and the other 51 cards are dealt.</li><li>First, throw away every pair you hold (tap two cards of the same rank), then press Done.</li><li>Then take turns drawing one hidden card from the next player’s hand and throw away any new pair.</li><li>Whoever is left holding the unpaired Jack is the <b>Jack Thief</b>.</li></ul></details></div>
+  <div class="panel"><details><summary>How to play</summary><ul><li>2 to 8 players. One random Jack is removed and the other 51 cards are dealt.</li><li>First, throw away every pair you hold (tap two cards of the same rank), then press Done.</li><li>Then take turns drawing one hidden card from the next player’s hand and throw away any new pair.</li><li>Whoever is left holding the unpaired Jack is the <b>Jack Thief</b>.</li></ul></details></div>
 </section>
 
 <section id="lobby" class="screen">
@@ -39,13 +39,15 @@
     <div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="copyLink" style="flex:0 1 auto">Copy invite link</button></div>
   </div>
   <div class="panel"><ul class="plist" id="plist"></ul></div>
+  <div class="panel" id="specPanel" style="display:none"><div class="small" id="specTitle"></div><div id="specNames" class="small"></div></div>
   <div class="panel" id="settings"></div>
   <div class="hint" id="lobbyHint"></div>
-  <div class="row"><button class="btn" id="start">Start game</button><button class="btn ghost" data-leave>Leave room</button></div>
+  <div class="row"><button class="btn" id="start">Start game</button><button class="btn" id="joinTable" style="display:none">Take a seat</button><button class="btn ghost" data-leave>Leave room</button></div>
 </section>
 
 <section id="game" class="screen">
-  <div class="gh"><div><h1 class="gt">Jack Thief</h1><div class="gs" id="gsub"></div></div><button class="rbtn" data-leave aria-label="Leave room">Leave</button></div>
+  <div class="gh"><div><h1 class="gt">Jack Thief</h1><div class="gs" id="gsub"></div></div><div class="gbtns"><button class="rbtn eye" id="eye" aria-label="Spectators" style="display:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3"/></svg><b id="eyeN"></b></button><button class="rbtn" data-leave aria-label="Leave room">Leave</button></div></div>
+  <div class="eyepop" id="eyePop"></div>
   <div class="chips" id="seats"></div>
   <div class="otable"><div class="oval jt"><div class="center"><div class="bigcount" id="thrownCount"></div><div class="emptytag" id="thrownLbl">cards thrown away</div><div class="emptytag" id="sortTimer"></div><div class="fan" id="fan"></div></div></div><div id="ring"></div></div>
   <div class="pillrow"><span class="pill" id="ev"></span></div>
@@ -55,7 +57,7 @@
 </section>
 
 <div class="modal" id="over"><div class="box"><h2 id="overTitle"></h2><p id="overSub" class="small"></p>
-  <div class="row" style="margin-top:12px"><button class="btn" id="again">Play again</button><button class="btn ghost" data-leave>Leave</button></div>
+  <div class="row" style="margin-top:12px"><button class="btn" id="again">Play again</button><button class="btn" id="joinTable2" style="display:none">Join next game</button><button class="btn ghost" data-leave>Leave</button></div>
   <p class="small" id="overWait" style="display:none">Waiting for the host to start a new game…</p></div></div>
 
 <button id="chatBtn" aria-label="Chat">💬<b id="chatBadge" style="position:absolute;top:-6px;right:-6px;background:#ff5252;border-radius:10px;font-size:12px;min-width:20px;padding:1px 5px;display:none"></b></button>
@@ -69,7 +71,7 @@
 <p>The game is simple to learn but full of bluffing: you can fan out your cards, hesitate, or grin when the next player reaches for the Jack. Read the <a href="/games/jack-thief">full rules and strategy guide</a> for the details.</p>
 <h2>Features</h2>
 <ul>
-<li><strong>Rooms for 2 to 10 players</strong> with a four-letter code and a one-tap invite link.</li>
+<li><strong>Rooms for 2 to 8 players</strong> with a four-letter code and a one-tap invite link.</li>
 <li><strong>Sort stage</strong> where you throw away your pairs, with a timer so everyone stays in step.</li>
 <li><strong>Hidden draws</strong> from the next player's hand, with a public count of thrown-away cards.</li>
 <li><strong>Fair server-side shuffle</strong> and full rule enforcement.</li>

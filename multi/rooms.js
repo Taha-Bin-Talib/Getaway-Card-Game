@@ -1,10 +1,9 @@
 'use strict';
 // Room layer: lobby, host controls, reconnects. Game rules live in games/*.js.
 const crypto = require('crypto');
-const { send, roomView, broadcast } = require('./net');
+const { send, roomView, broadcast, MAX_SPECTATORS, seatCap, joinMode, everyone } = require('./net');
 const games = require('./games');
 
-const ROOM_MAX = 10;
 const REACTIONS = ['😂', '😢', '😉', '😡', '😮', '👏', '🔥', '👍'];
 const chatLimited = p => { const n = Date.now(); if (p.lastChat && n - p.lastChat < 600) return true; p.lastChat = n; return false; };
 const rooms = new Map();
@@ -33,7 +32,7 @@ function createRoom(ws, m) {
   if (!name) return err(ws, 'Enter your name.');
   const engine = games.get(m.game);
   if (!engine) return err(ws, 'Pick a game.');
-  const room = { code: newCode(), players: [], phase: 'lobby', timer: null, gen: 0, g: null, lastActive: Date.now(), hostId: null, chat: [] };
+  const room = { code: newCode(), players: [], spectators: [], phase: 'lobby', timer: null, gen: 0, g: null, lastActive: Date.now(), hostId: null, chat: [] };
   setEngine(room, engine.id);
   rooms.set(room.code, room);
   addPlayer(ws, room, name);
@@ -49,26 +48,48 @@ function addPlayer(ws, room, name) {
   broadcast(room);
 }
 
+function addSpectator(ws, room, name) {
+  const sp = { id: newId(), token: crypto.randomBytes(12).toString('hex'), name, ws, connected: true, spectator: true, hand: [], queued: false };
+  room.spectators.push(sp);
+  ws.room = room; ws.pid = sp.id;
+  send(ws, { t: 'joined', token: sp.token, code: room.code, id: sp.id, spectator: true, catalog: games.catalog() });
+  send(ws, { t: 'chatlog', log: room.chat });
+  broadcast(room);
+}
+function dropSpectator(room, sp) { clearTimeout(sp.dropT); room.spectators = room.spectators.filter(q => q !== sp); }
+function promoteSpectator(room, sp) {       // spectator takes a free seat: a normal player with a fresh token
+  dropSpectator(room, sp);
+  const ws = sp.ws;
+  const p = { id: newId(), token: crypto.randomBytes(12).toString('hex'), name: sp.name, ws, connected: !!ws, ready: false, hand: [], out: false, place: 0 };
+  room.players.push(p);
+  if (!room.hostId) room.hostId = p.id;
+  if (ws) { ws.room = room; ws.pid = p.id; send(ws, { t: 'joined', token: p.token, code: room.code, id: p.id, catalog: games.catalog() }); }
+  return p;
+}
+const nameTaken = (room, name) => everyone(room).some(p => p.name.toLowerCase() === name.toLowerCase());
+
 function joinRoom(ws, m) {
   const name = cleanName(m.name);
   const room = rooms.get(String(m.code || '').toUpperCase().trim());
   if (!name) return err(ws, 'Enter your name.');
   if (!room) return err(ws, 'No room with that code.');
-  if (room.phase !== 'lobby') return err(ws, 'That game has already started.');
-  if (room.players.length >= Math.min(ROOM_MAX, room.engine.max)) return err(ws, 'The room is full.');
-  if (room.players.some(p => p.name.toLowerCase() === name.toLowerCase())) return err(ws, 'That name is taken in this room.');
+  if (nameTaken(room, name)) return err(ws, 'That name is taken in this room.');
+  if (room.phase !== 'lobby' || room.players.length >= seatCap(room)) {          // can't sit down: watch instead
+    if (room.spectators.length >= MAX_SPECTATORS) return err(ws, room.phase === 'lobby' ? 'The table is full and both spectator seats are taken.' : 'That game is in progress and both spectator seats are taken.');
+    return addSpectator(ws, room, name);
+  }
   addPlayer(ws, room, name);
 }
 
 function rejoin(ws, m) {
   const room = rooms.get(String(m.code || '').toUpperCase());
-  const p = room && room.players.find(q => q.token === m.token);
+  const p = room && (room.players.find(q => q.token === m.token) || room.spectators.find(q => q.token === m.token));
   if (!p) return send(ws, { t: 'gone' });
   if (p.ws && p.ws !== ws) { p.ws.room = null; try { p.ws.close(); } catch (e) { /* ignore */ } }
-  p.ws = ws; p.connected = true; ws.room = room; ws.pid = p.id;
-  send(ws, { t: 'joined', token: p.token, code: room.code, id: p.id, catalog: games.catalog() });
+  p.ws = ws; p.connected = true; ws.room = room; ws.pid = p.id; clearTimeout(p.dropT);
+  send(ws, { t: 'joined', token: p.token, code: room.code, id: p.id, spectator: !!p.spectator, catalog: games.catalog() });
   send(ws, { t: 'chatlog', log: room.chat });
-  if (room.phase === 'playing') room.engine.onPresence && room.engine.onPresence(room, p);
+  if (!p.spectator && room.phase === 'playing') room.engine.onPresence && room.engine.onPresence(room, p);
   broadcast(room);
 }
 
@@ -89,12 +110,20 @@ function removePlayer(room, p) {
 
 function destroy(room) {
   clearTimeout(room.timer); room.gen++;
+  for (const sp of room.spectators) { clearTimeout(sp.dropT); if (sp.ws) { send(sp.ws, { t: 'gone' }); sp.ws.room = null; } }
+  room.spectators = [];
   rooms.delete(room.code);
 }
 
 function disconnect(ws) {
   const room = ws.room;
   if (!room) return;
+  const sp = room.spectators.find(q => q.id === ws.pid);
+  if (sp && sp.ws === ws) {                         // short grace so a refresh can rejoin
+    sp.ws = null; sp.connected = false;
+    sp.dropT = setTimeout(() => { if (!sp.connected && room.spectators.includes(sp)) { dropSpectator(room, sp); broadcast(room); } }, 15000); sp.dropT.unref();
+    return;
+  }
   const p = room.players.find(q => q.id === ws.pid);
   if (!p || p.ws !== ws) return;
   p.ws = null; p.connected = false;
@@ -117,9 +146,23 @@ function handle(ws, m) {
   if (m.t === 'rejoin') return rejoin(ws, m);
   if (m.t === 'ping') return send(ws, { t: 'pong' });
   const room = ws.room;
-  const p = room && room.players.find(q => q.id === ws.pid);
+  const p = room && (room.players.find(q => q.id === ws.pid) || room.spectators.find(q => q.id === ws.pid));
   if (!room || !p) return err(ws, 'You are not in a room.');
   const host = room.hostId === p.id;
+  if (p.spectator) {                                  // spectators may only chat, react, take a seat or leave
+    switch (m.t) {
+      case 'chat': case 'react': break;               // shared with players below
+      case 'joinTable': {
+        const mode = joinMode(room, p);
+        if (mode === 'now') { promoteSpectator(room, p); return broadcast(room); }
+        if (mode === 'queue') { p.queued = true; return broadcast(room); }
+        if (mode === 'queued') { p.queued = false; return broadcast(room); }
+        return err(ws, mode === 'full' ? 'The table is full.' : 'You can take a seat when this game ends.');
+      }
+      case 'leave': send(ws, { t: 'left' }); ws.room = null; dropSpectator(room, p); return broadcast(room);
+      default: return;
+    }
+  }
   switch (m.t) {
     case 'chat': {
       const text = String(m.text || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
@@ -127,12 +170,12 @@ function handle(ws, m) {
       const msg = { id: p.id, name: p.name, text, ts: Date.now() };
       room.chat.push(msg); if (room.chat.length > 60) room.chat.shift();
       room.lastActive = Date.now();
-      for (const q of room.players) if (q.ws) send(q.ws, { t: 'chat', m: msg });
+      for (const q of everyone(room)) if (q.ws) send(q.ws, { t: 'chat', m: msg });
       return;
     }
     case 'react': {
       if (!REACTIONS.includes(m.e) || chatLimited(p)) return;
-      for (const q of room.players) if (q.ws) send(q.ws, { t: 'react', pid: p.id, name: p.name, e: m.e });
+      for (const q of everyone(room)) if (q.ws) send(q.ws, { t: 'react', pid: p.id, name: p.name, e: m.e });
       return;
     }
     case 'ready': {                       // lobby only: a player marks themselves ready / not ready
@@ -186,6 +229,7 @@ function handle(ws, m) {
       room.phase = 'lobby'; room.g = null;
       room.players = room.players.filter(q => q.connected);
       room.players.forEach(q => { q.ready = false; });
+      for (const sp of room.spectators.filter(q => q.queued && q.connected)) { if (room.players.length < seatCap(room)) promoteSpectator(room, sp); else sp.queued = false; }
       return broadcast(room);
     }
     case 'leave': {
