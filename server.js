@@ -476,6 +476,7 @@ function chatLimited(p) {                           // max 1 chat/reaction per 6
 }
 
 function handle(ws, m) {
+  if ((m.t === 'join' || m.t === 'create') && ws.ctx && ws.ctx.room && rooms.get(ws.ctx.room.code) === ws.ctx.room) return;            // already seated: a double tap must not add a second player
   if (m.t === 'create') {
     const room = makeRoom();
     rooms.set(room.code, room);
