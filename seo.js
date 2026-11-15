@@ -40,6 +40,11 @@ function enhance(html, cleanPath, base, mtime) {
     `<meta property="og:image:width" content="1200">`, `<meta property="og:image:height" content="630">`,
     `<meta property="og:image:alt" content="${SITE_NAME}: Bhabhi Thulla, Bluff and Jack Thief card games online">`);
   add.push('<meta name="robots" content="index, follow, max-image-preview:large">');
+  // search-console ownership tags: set GOOGLE_SITE_VERIFICATION / BING_SITE_VERIFICATION on the host (Render env vars) to the token only
+  if (cleanPath === '/') {
+    if (process.env.GOOGLE_SITE_VERIFICATION) add.push(`<meta name="google-site-verification" content="${esc(process.env.GOOGLE_SITE_VERIFICATION)}">`);
+    if (process.env.BING_SITE_VERIFICATION) add.push(`<meta name="msvalidate.01" content="${esc(process.env.BING_SITE_VERIFICATION)}">`);
+  }
   // structured data
   const crumbs = [['Home', base + '/']];
   if (cleanPath.startsWith('/games/')) crumbs.push(['Guides', null], [attr(html, /<h1>([^<]*)/).trim() || title, url]);
