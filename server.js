@@ -603,7 +603,7 @@ const cacheCtl = ext => ext === '.html' ? 'public, max-age=0, must-revalidate'
   : ext === '.css' || ext === '.js' ? 'public, max-age=3600, stale-while-revalidate=86400' : 'public, max-age=604800';
 const pageCache = new Map();                                  // enhanced html, keyed by host + file + mtime
 
-function send(req, res, code, type, body, extra = {}) {
+function sendHttp(req, res, code, type, body, extra = {}) {
   const ext = extra.ext || '', headers = { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', Vary: 'Accept-Encoding', ...extra.headers };
   if (extra.etag) { headers.ETag = extra.etag; if (req.headers['if-none-match'] === extra.etag) { res.writeHead(304, headers); return res.end(); } }
   if (GZIP.has(ext) && body.length > 800 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) { body = zlib.gzipSync(body); headers['Content-Encoding'] = 'gzip'; }
@@ -618,8 +618,8 @@ const server = http.createServer((req, res) => {
   try { u = decodeURIComponent(req.url.split('?')[0]); } catch (e) { res.writeHead(400); return res.end(); }
   if (u === '/healthz') { res.writeHead(200); return res.end('ok'); }
   const base = seo.origin(req);
-  if (u === '/robots.txt') return send(req, res, 200, MIME['.txt'], seo.robots(base), { ext: '.txt', headers: { 'Cache-Control': 'public, max-age=3600' } });
-  if (u === '/sitemap.xml') return send(req, res, 200, 'application/xml; charset=utf-8', seo.sitemap(base), { ext: '.xml', headers: { 'Cache-Control': 'public, max-age=3600' } });
+  if (u === '/robots.txt') return sendHttp(req, res, 200, MIME['.txt'], seo.robots(base), { ext: '.txt', headers: { 'Cache-Control': 'public, max-age=3600' } });
+  if (u === '/sitemap.xml') return sendHttp(req, res, 200, 'application/xml; charset=utf-8', seo.sitemap(base), { ext: '.xml', headers: { 'Cache-Control': 'public, max-age=3600' } });
   // one URL per page: /index.html -> /, /about.html -> /about, /games/bluff/ -> /games/bluff
   if (u.endsWith('.html') || (u.length > 1 && u.endsWith('/'))) {
     const clean = u === '/index.html' ? '/' : u.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
@@ -632,7 +632,7 @@ const server = http.createServer((req, res) => {
   if (!f.startsWith(PUB)) { res.writeHead(403); return res.end(); }
   fs.stat(f, (e, st) => {
     if (e || !st.isFile()) {
-      return send(req, res, 404, 'text/html; charset=utf-8', '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Page not found | Jack of All</title><body style="font-family:Georgia,serif;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Jack of All</a></p>', { ext: '.html' });
+      return sendHttp(req, res, 404, 'text/html; charset=utf-8', '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Page not found | Jack of All</title><body style="font-family:Georgia,serif;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Jack of All</a></p>', { ext: '.html' });
     }
     const ext = path.extname(f), etag = `W/"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}${ext === '.html' ? '-' + base.length : ''}"`;
     const type = MIME[ext] || 'application/octet-stream', headers = { 'Cache-Control': cacheCtl(ext) };
@@ -642,9 +642,9 @@ const server = http.createServer((req, res) => {
         const key = base + '|' + f + '|' + st.mtimeMs;
         let html = pageCache.get(key);
         if (!html) { if (pageCache.size > 200) pageCache.clear(); html = seo.enhance(d.toString('utf8'), clean, base, st.mtimeMs); pageCache.set(key, html); }
-        return send(req, res, 200, type, html, { ext, headers, etag: etag + '-' + require('crypto').createHash('md5').update(base).digest('hex').slice(0, 6) });
+        return sendHttp(req, res, 200, type, html, { ext, headers, etag: etag + '-' + require('crypto').createHash('md5').update(base).digest('hex').slice(0, 6) });
       }
-      send(req, res, 200, type, d, { ext, headers, etag });
+      sendHttp(req, res, 200, type, d, { ext, headers, etag });
     });
   });
 });
