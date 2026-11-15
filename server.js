@@ -17,7 +17,7 @@ const REQUEST_MAX_CARDS = 5;                                // a hand can only b
 const BOT_MS = Math.max(1, num(process.env.BOT_MS, 4000)); // auto-play delay for disconnected players
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
 };
 
 /* ---------- card helpers ---------- */
@@ -596,21 +596,56 @@ function handle(ws, m) {
 }
 
 /* ---------- http + ws ---------- */
+const seo = require('./seo');
+const zlib = require('zlib');
+const GZIP = new Set(['.html', '.js', '.css', '.svg', '.txt', '.xml', '.ico']);
+const cacheCtl = ext => ext === '.html' ? 'public, max-age=0, must-revalidate'
+  : ext === '.css' || ext === '.js' ? 'public, max-age=3600, stale-while-revalidate=86400' : 'public, max-age=604800';
+const pageCache = new Map();                                  // enhanced html, keyed by host + file + mtime
+
+function send(req, res, code, type, body, extra = {}) {
+  const ext = extra.ext || '', headers = { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', Vary: 'Accept-Encoding', ...extra.headers };
+  if (extra.etag) { headers.ETag = extra.etag; if (req.headers['if-none-match'] === extra.etag) { res.writeHead(304, headers); return res.end(); } }
+  if (GZIP.has(ext) && body.length > 800 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) { body = zlib.gzipSync(body); headers['Content-Encoding'] = 'gzip'; }
+  headers['Content-Length'] = Buffer.byteLength(body);
+  res.writeHead(code, headers);
+  res.end(req.method === 'HEAD' ? undefined : body);
+}
+
 const server = http.createServer((req, res) => {
-  let u = decodeURIComponent(req.url.split('?')[0]);
+  if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end(); }
+  let u;
+  try { u = decodeURIComponent(req.url.split('?')[0]); } catch (e) { res.writeHead(400); return res.end(); }
   if (u === '/healthz') { res.writeHead(200); return res.end('ok'); }
+  const base = seo.origin(req);
+  if (u === '/robots.txt') return send(req, res, 200, MIME['.txt'], seo.robots(base), { ext: '.txt', headers: { 'Cache-Control': 'public, max-age=3600' } });
+  if (u === '/sitemap.xml') return send(req, res, 200, 'application/xml; charset=utf-8', seo.sitemap(base), { ext: '.xml', headers: { 'Cache-Control': 'public, max-age=3600' } });
+  // one URL per page: /index.html -> /, /about.html -> /about, /games/bluff/ -> /games/bluff
+  if (u.endsWith('.html') || (u.length > 1 && u.endsWith('/'))) {
+    const clean = u === '/index.html' ? '/' : u.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
+    res.writeHead(301, { Location: clean + (req.url.includes('?') ? '?' + req.url.split('?')[1] : '') }); return res.end();
+  }
   if (u === '/') u = '/index.html';
-  else if (u.length > 1 && u.endsWith('/')) u = u.slice(0, -1);
+  const clean = u === '/index.html' ? '/' : u.replace(/\.html$/, '');
   if (!path.extname(u)) u += '.html';                        // clean URLs: /play -> play.html, /games/bluff -> games/bluff.html
   const f = path.normalize(path.join(PUB, u));
   if (!f.startsWith(PUB)) { res.writeHead(403); return res.end(); }
-  fs.readFile(f, (e, d) => {
-    if (e) {
-      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<!doctype html><meta charset="utf-8"><title>Page not found</title><body style="font-family:system-ui;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Jack of All</a></p>');
+  fs.stat(f, (e, st) => {
+    if (e || !st.isFile()) {
+      return send(req, res, 404, 'text/html; charset=utf-8', '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Page not found | Jack of All</title><body style="font-family:Georgia,serif;background:#06402a;color:#fff;text-align:center;padding:60px 16px"><h1>Page not found</h1><p><a style="color:#f5c542" href="/">Back to Jack of All</a></p>', { ext: '.html' });
     }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
-    res.end(d);
+    const ext = path.extname(f), etag = `W/"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}${ext === '.html' ? '-' + base.length : ''}"`;
+    const type = MIME[ext] || 'application/octet-stream', headers = { 'Cache-Control': cacheCtl(ext) };
+    fs.readFile(f, (err, d) => {
+      if (err) { res.writeHead(500); return res.end(); }
+      if (ext === '.html') {
+        const key = base + '|' + f + '|' + st.mtimeMs;
+        let html = pageCache.get(key);
+        if (!html) { if (pageCache.size > 200) pageCache.clear(); html = seo.enhance(d.toString('utf8'), clean, base, st.mtimeMs); pageCache.set(key, html); }
+        return send(req, res, 200, type, html, { ext, headers, etag: etag + '-' + require('crypto').createHash('md5').update(base).digest('hex').slice(0, 6) });
+      }
+      send(req, res, 200, type, d, { ext, headers, etag });
+    });
   });
 });
 
