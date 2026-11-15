@@ -620,6 +620,9 @@ const server = http.createServer((req, res) => {
   const base = seo.origin(req);
   if (u === '/robots.txt') return sendHttp(req, res, 200, MIME['.txt'], seo.robots(base), { ext: '.txt', headers: { 'Cache-Control': 'public, max-age=3600' } });
   if (u === '/sitemap.xml') return sendHttp(req, res, 200, 'application/xml; charset=utf-8', seo.sitemap(base), { ext: '.xml', headers: { 'Cache-Control': 'public, max-age=3600' } });
+  if (/^\/google[0-9a-f]+\.html$/.test(u)) {                  // Search Console ownership file: served exactly as is, no redirect or tag injection
+    return fs.readFile(path.join(PUB, u), (e, d) => e ? sendHttp(req, res, 404, 'text/plain', 'Not found') : sendHttp(req, res, 200, 'text/html; charset=utf-8', d, { headers: { 'Cache-Control': 'public, max-age=3600' } }));
+  }
   // one URL per page: /index.html -> /, /about.html -> /about, /games/bluff/ -> /games/bluff
   if (u.endsWith('.html') || (u.length > 1 && u.endsWith('/'))) {
     const clean = u === '/index.html' ? '/' : u.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
