@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 3000;
 const PUB = path.join(__dirname, 'public');
 const num = (v, d) => (v !== undefined && v !== '' && !isNaN(+v) ? +v : d);
 const SETTLE_MS = num(process.env.SETTLE_MS, 1800);        // how long a finished trick stays on the table
+const FORFEIT_MS = num(process.env.SETTLE_MS, 3400);       // ...and the throw-in-your-cards finish
 const THULLA_MS = num(process.env.SETTLE_MS, 2600);        // ...and a Thulla (pick-up) trick
 const CONSENT_MS = num(process.env.CONSENT_MS, 15000);     // how long the asked player has to answer a hand request
 const TURN_MS = num(process.env.TURN_MS, 60000);           // time to make your move before the server plays for you
@@ -61,6 +62,7 @@ function makeRoom() {
     timer: null, gen: 0, duelSeen: false, turnUntil: 0,
   };
 }
+const { solve } = require('./duel');
 const byId = (room, id) => room.players.find(p => p.id === id);
 const seatOf = (room, p) => room.players.indexOf(p);
 const nonOut = room => room.players.filter(p => !p.out);
@@ -102,7 +104,7 @@ function startGame(room) {
   clearTimeout(room.timer); room.timer = null; room.gen++;
   room.phase = 'playing'; room.stage = 'turn';
   room.loserId = null; room.discarded = 0; room.trickNo = 0; room.outCounter = 0;
-  room.consent = null; room.pick = null; room.settle = null; room.lastTrick = null; room.fxSeq = 0; room.duelSeen = false;
+  room.consent = null; room.pick = null; room.settle = null; room.lastTrick = null; room.fxSeq = 0; room.duelSeen = false; room.forfeit = null;
   room.players.forEach(p => { p.hand = []; p.out = false; p.place = 0; p.reveal = null; p.requestedThisTurn = false; });
   const deck = newDeck();
   deck.forEach((c, i) => room.players[i % room.players.length].hand.push(c));
@@ -216,11 +218,34 @@ function afterDiscard(room, winner) {
   if (live.length === 2) {
     const empty = live.filter(p => p.hand.length === 0);
     if (empty.length === 1 && empty[0] === winner) {
-      return startPick(room, winner, live.find(p => p !== winner));
+      const other = live.find(p => p !== winner);
+      if (checkForfeit(room, winner, other, true)) return;
+      return startPick(room, winner, other);
     }
   }
   const leader = winner.hand.length > 0 ? winner : nextActiveAfter(room, winner);
   finishTrick(room, leader);
+}
+
+/* FINAL DUEL: if one player can no longer win in ANY line of play, the game is decided. That player throws all
+   their cards on the table and is the Bhabhi (the client plays the throw-in animation during this short pause). */
+function checkForfeit(room, lead, other, pick) {
+  if (room.noForfeit || !lead || !other) return false;
+  if (lead.hand.length + other.hand.length > 10 || (!pick && (!lead.hand.length || !other.hand.length))) return false;
+  const hands = [lead.hand, other.hand], r = solve(hands, 0, pick);
+  if (r.doomed === null) return false;
+  const loser = r.doomed === 0 ? lead : other;
+  const text = `${loser.name} can’t win any more — throws in their cards!`;
+  room.stage = 'settle'; room.turn = null; room.consent = null; room.pick = null;
+  room.settle = { kind: 'forfeit', toId: null, bestPid: null, loserId: loser.id, text };
+  room.forfeit = { pid: loser.id, cards: sortHand(loser.hand.slice()) };
+  setEvent(room, 'forfeit', text);
+  later(room, FORFEIT_MS, () => {
+    room.settle = null;
+    room.players.forEach(q => { if (q !== loser) markOut(room, q); });     // the other player is safe
+    endGame(room, loser);
+  });
+  return true;
 }
 
 function startPick(room, picker, other) {
@@ -259,6 +284,7 @@ function finishTrick(room, leader) {
   markOuts(room);
   const active = room.players.filter(p => p.hand.length > 0);
   if (active.length <= 1 || !leader || leader.hand.length === 0) return endGame(room, active[0] || null);
+  if (nonOut(room).length === 2 && checkForfeit(room, leader, room.players.find(p => !p.out && p !== leader), false)) return;
   if (!room.duelSeen && nonOut(room).length === 2) {
     room.duelSeen = true;
     setEvent(room, 'duel', '⚔ Final duel — two players left!');
@@ -378,6 +404,7 @@ function view(room, p) {
     leadSuit: playing && t ? t.leadSuit : null, firstTrick: playing && t ? t.first : false,
     plays: playing && t ? t.plays : [], loserId: room.loserId,
     settle: playing ? room.settle : null,
+    forfeit: playing && room.settle && room.settle.kind === 'forfeit' ? room.forfeit : null,
     consent: consent ? { pid: consent.pid, targetId: consent.targetId, ms: Math.max(0, consent.until - Date.now()) } : null,
     pick: pick ? { pid: pick.pid, fromId: pick.fromId, n: pick.perm.length } : null,
     timer: playing && (room.stage === 'turn' || room.stage === 'pick') && room.turn ? { pid: room.turn, ms: Math.max(0, room.turnUntil - Date.now()) } : null,
@@ -703,5 +730,5 @@ if (require.main === module) {
   server.listen(PORT, () => console.log(`Thulla server running on http://localhost:${PORT}`));
 } else {
   // loaded by the rule tests: expose internals, don't open a port
-  module.exports = { REACTIONS, handle, makeRoom, addPlayer, startGame, newTrick, playCard, doRequest, doRespond, doPick, view, rooms, sortHand };
+  module.exports = { server, REACTIONS, finishTrick, broadcast, handle, makeRoom, addPlayer, startGame, newTrick, playCard, doRequest, doRespond, doPick, view, rooms, sortHand };
 }
