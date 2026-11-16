@@ -52,7 +52,7 @@ function enhance(html, cleanPath, base, mtime) {
   const crumbLd = crumbs.filter(c => c[1]).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c[0], item: c[1] }));
   if (cleanPath === '/') {
     add.push(ld({ '@context': 'https://schema.org', '@graph': [
-      { '@type': 'WebSite', '@id': base + '/#site', url: base + '/', name: SITE_NAME, description: desc, inLanguage: 'en' },
+      { '@type': 'WebSite', '@id': base + '/#site', url: base + '/', name: SITE_NAME, alternateName: ['Jack of All card games', 'JackOfAll'], description: desc, inLanguage: 'en' },
       { '@type': 'Organization', '@id': base + '/#org', name: SITE_NAME, url: base + '/', logo: base + '/img/logo-192.png' },
     ] }));
   } else if (cleanPath.startsWith('/games/')) {
