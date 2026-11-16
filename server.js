@@ -240,7 +240,11 @@ function checkForfeit(room, lead, other, pick) {
   room.settle = { kind: 'forfeit', toId: null, bestPid: null, loserId: loser.id, text };
   room.forfeit = { pid: loser.id, cards: sortHand(loser.hand.slice()) };
   setEvent(room, 'forfeit', text);
-  later(room, FORFEIT_MS, () => { room.settle = null; endGame(room, loser); });
+  later(room, FORFEIT_MS, () => {
+    room.settle = null;
+    room.players.forEach(q => { if (q !== loser) markOut(room, q); });     // the other player is safe
+    endGame(room, loser);
+  });
   return true;
 }
 

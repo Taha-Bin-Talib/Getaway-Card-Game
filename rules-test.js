@@ -4,12 +4,13 @@ const assert = require('assert');
 const T = require('./server');
 
 const fakeWs = () => ({ readyState: 1, send() {} });
-function table(names, hands, { mode = 'elimination', trick = 5 } = {}) {
+function table(names, hands, { mode = 'elimination', trick = 5, forfeit = false } = {}) {
   const room = T.makeRoom();
   room.settings.requestMode = mode;
   names.forEach(n => T.addPlayer(room, fakeWs(), n));
   room.players.forEach((p, i) => { p.hand = hands[i].slice(); T.sortHand(p.hand); p.out = false; p.place = 0; });
   room.phase = 'playing'; room.stage = 'turn'; room.trickNo = trick;
+  room.noForfeit = !forfeit;                // most tests exercise the plain duel mechanics; the forfeit tests switch it on
   return room;
 }
 const P = (room, n) => room.players.find(p => p.name === n);
@@ -272,6 +273,27 @@ ok('a player who moves in time is NOT auto-played', () => {
   r.phase = 'playing'; r.stage = 'turn'; r.trickNo = 4; T4.newTrick(r, r.players[0], false);
   T4.playCard(r, r.players[0], '3D');
   return new Promise(res => setTimeout(() => { assert.equal(r.trick.plays[0].card, '3D'); res(); }, 20));
+});
+
+console.log('Final duel: no way to win any more');
+ok('forfeit: the doomed player throws in their cards and is the Bhabhi, the other is safe', () => {
+  const r = table(['A', 'B'], [['2S'], ['13H']], { forfeit: true });   // A must lead the spade, B has none: Thulla, B is out, A is stuck
+  T.finishTrick(r, P(r, 'A'));
+  assert.equal(r.phase, 'over');
+  assert.equal(r.loserId, P(r, 'A').id);
+  assert(P(r, 'B').out);
+});
+ok('no forfeit while both players can still win', () => {
+  const r = table(['A', 'B'], [['9H', '2S'], ['5H', '8S']], { forfeit: true });
+  T.finishTrick(r, P(r, 'A'));
+  assert.equal(r.phase, 'playing');
+  assert.equal(r.stage, 'turn');
+});
+ok('forfeit view carries the thrown cards', () => {
+  process.env.SETTLE_MS = '0';
+  const r = table(['A', 'B'], [['2S'], ['13H']], { forfeit: true });
+  r.settle = { kind: 'forfeit' }; r.forfeit = { pid: P(r, 'A').id, cards: ['2S'] };
+  assert.deepEqual(T.view(r, P(r, 'B')).forfeit, { pid: P(r, 'A').id, cards: ['2S'] });
 });
 
 Promise.all(pending).then(() => { console.log(`\n${n} rule checks passed`); process.exit(0); }, e => { console.error(e); process.exit(1); });
