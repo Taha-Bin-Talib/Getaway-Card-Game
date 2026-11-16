@@ -79,7 +79,10 @@ details ul{margin:8px 0 0;padding-left:20px;line-height:1.5;opacity:.92}
 #pile{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 #pile .card{--cw:calc(var(--u)*9);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.72);opacity:.95}
 #pile .lbl{position:absolute;left:calc(var(--u)*-10);width:calc(var(--u)*20);top:calc(var(--u)*6.6);text-align:center;font-size:max(9px,calc(var(--u)*2.5));opacity:.75}
-#slots,#fx,#seats{position:absolute;inset:0;pointer-events:none}
+#slots,#fx,#seats,#forfeit{position:absolute;inset:0;pointer-events:none}
+#forfeit .slot{z-index:60}
+#forfeit .slot .card{--cw:calc(var(--u)*13);box-shadow:0 calc(var(--u)*.6) calc(var(--u)*2) rgba(0,0,0,.55)}
+body.forfeit-me #hand{opacity:0;transform:translateY(24px);transition:opacity .5s .15s,transform .5s .15s}
 .slot{position:absolute;width:0;height:0}
 .slot .card{--cw:calc(var(--u)*13);position:absolute;left:calc(var(--cw)*-.5);top:calc(var(--cw)*-.715)}
 .slot.best .card{outline:calc(var(--u)*.7) solid var(--gold);box-shadow:0 0 calc(var(--u)*3) rgba(245,197,66,.8)}
@@ -288,6 +291,7 @@ body.spec #hand,body.spec #actions{display:none}
       <div id="arrow"></div>
       <div id="slots"></div>
       <div id="seats"></div>
+      <div id="forfeit"></div>
       <div id="fx"></div>
     </div>
   </div>
@@ -507,7 +511,7 @@ function renderSeats(){
     d.className = 'seat' + (active ? ' turn' : '') + (p.out ? ' out' : '') + (me ? ' you' : '');
     place(d, pt);
     let fan = '';
-    if (!me && !p.out && p.count > 0) {
+    if (!me && !p.out && p.count > 0 && !(S.forfeit && S.forfeit.pid === p.id)) {
       const k = Math.min(p.count, 6);
       for (let j = 0; j < k; j++) fan += `<div class="card back" style="transform:rotate(${(j-(k-1)/2)*9}deg)"></div>`;
     }
@@ -656,7 +660,39 @@ function pointer(){
 
 function renderTable(){
   computeGeo();
-  renderSeats(); renderPlays(); renderPile(); pointer();
+  renderSeats(); renderPlays(); renderPile(); renderForfeit(); pointer();
+}
+
+/* FINAL DUEL FORFEIT: a player who can no longer win throws their whole hand onto the table, face up, then the game ends. */
+let forfeitKey = null;
+function renderForfeit(){
+  const box = $('forfeit'), f = S.forfeit;
+  document.body.classList.toggle('forfeit-me', !!(f && f.pid === S.you.id));
+  if (!f) { if (forfeitKey) { box.innerHTML = ''; forfeitKey = null; } return; }
+  const key = f.pid + ':' + f.cards.join(',');
+  if (key === forfeitKey || !geo[f.pid]) return;
+  forfeitKey = key; box.innerHTML = '';
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const n = f.cards.length, from = polar(geo[f.pid].ang, SEAT, 1.1);
+  f.cards.forEach((id, k) => {
+    const dest = {x: 50 + (k - (n - 1) / 2) * Math.min(8, 34 / n) + (Math.random() * 3 - 1.5), y: CY + (k % 2 ? 3.5 : -3) + (Math.random() * 3 - 1.5)};
+    const rot = (Math.random() * 2 - 1) * 38, el = document.createElement('div');
+    el.className = 'slot'; el.appendChild(cardEl(id)); place(el, dest); el.style.transform = `rotate(${rot}deg)`; el.style.zIndex = 60 + k;
+    box.appendChild(el);
+    const dx = (from.x - dest.x) * ringW / 100, dy = (from.y - dest.y) * ringW / 100, delay = k * 170;
+    if (!el.animate) return;
+    if (reduce) { el.animate([{opacity: 0}, {opacity: 1}], {duration: 200, delay, fill: 'backwards'}); return; }
+    const a = el.animate([
+      {transform: `translate(${dx}px,${dy}px) rotate(${rot - 200}deg) scale(.5)`, opacity: 0, easing: 'cubic-bezier(.2,.7,.3,1)'},
+      {transform: `translate(${dx*.15}px,${dy*.15}px) rotate(${rot + 10}deg) scale(1.3)`, opacity: 1, offset: .65, easing: 'cubic-bezier(.7,0,1,.5)'},
+      {transform: `rotate(${rot}deg) scale(1)`, opacity: 1}
+    ], {duration: 620, delay, fill: 'backwards'});
+    a.onfinish = () => {
+      try { if (navigator.vibrate) navigator.vibrate(k === n - 1 ? [0, 60, 40, 30] : 18); } catch (e) { /* not supported */ }
+      const A = Math.max(3, ringW * (k === n - 1 ? .008 : .004));
+      $('stage').animate([0, -1, .7, -.4, 0].map(m => ({transform: `translate(${m * A}px,${-m * A * .6}px)`})), {duration: 260, easing: 'linear'});
+    };
+  });
 }
 
 /* ---------- action area: request BEFORE you deal / answer a request / blind pick in the final duel ---------- */

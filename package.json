@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node test.js",
-    "test:rules": "node rules-test.js"
+    "test:rules": "node rules-test.js && node duel-test.js"
   },
   "dependencies": {
     "ws": "^8.18.0"
