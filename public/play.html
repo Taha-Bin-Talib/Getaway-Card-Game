@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Play Bhabhi Thulla Online — Free Multiplayer Card Game | Jack of All</title>
-<meta name="description" content="Play Bhabhi Thulla online with 3 to 8 friends for free. Create a room, share the code and play in your browser — no download or sign-up.">
+<title>Play Bhabhi Thulla Online - Free Multiplayer Card Game | Jack of All</title>
+<meta name="description" content="Play Bhabhi Thulla online with 3 to 8 friends for free. Create a room, share the code and play in your browser - no download or sign-up.">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/img/logo-192.png">
 <link rel="apple-touch-icon" href="/img/logo-180.png">
@@ -211,7 +211,7 @@ body.spec #hand,body.spec #actions{display:none}
 <!-- HOME -->
 <section id="home" class="screen on">
   <h1>Bhabhi <span>Thulla</span></h1>
-  <p class="sub">The classic South Asian card game — play online with 3 to 8 friends.</p>
+  <p class="sub">The classic South Asian card game - play online with 3 to 8 friends.</p>
   <div class="card-panel">
     <label class="small">Your name</label>
     <input id="name" maxlength="16" placeholder="e.g. Saad" autocomplete="nickname">
@@ -230,11 +230,11 @@ body.spec #hand,body.spec #actions{display:none}
       <ul>
         <li>Everyone sits around an oval table and the 52-card deck is dealt out. Aces are high. The holder of <b>A♠</b> opens the game.</li>
         <li>Play goes <b>clockwise</b> around the table. You must <b>follow the suit</b> that was led.</li>
-        <li>If you can't follow suit, play any card — that's a <b>Thulla</b>. The trick stops and the player with the <b>highest card of the led suit</b> picks up every card on the table and leads next.</li>
+        <li>If you can't follow suit, play any card - that's a <b>Thulla</b>. The trick stops and the player with the <b>highest card of the led suit</b> picks up every card on the table and leads next.</li>
         <li>If everyone follows suit, the highest card wins the trick, the cards are discarded and the winner leads.</li>
         <li><b>First-round protection:</b> in the opening trick nobody can Thulla. If you have no spades you may throw <b>any card lower than 10</b> (if you have none, you pass), and the cards are discarded.</li>
         <li><b>Move timer:</b> you have <b>1 minute</b> per move. If you run out of time, your highest card of the suit being followed is played for you.</li>
-        <li><b>Request rule:</b> on your turn, <i>before</i> you deal your card (from trick 2), you may ask the next player for their whole hand — but only if they have <b>fewer than 5 cards</b>. They are asked and can <b>agree or refuse</b>. In <i>Elimination</i> mode, if they agree they hand over every card and are out; in <i>Reveal</i> mode you just look at it. Once per turn.</li>
+        <li><b>Request rule:</b> on your turn, <i>before</i> you deal your card (from trick 2), you may ask the next player for their whole hand - but only if they have <b>fewer than 5 cards</b>. They are asked and can <b>agree or refuse</b>. In <i>Elimination</i> mode, if they agree they hand over every card and are out; in <i>Reveal</i> mode you just look at it. Once per turn.</li>
         <li><b>Final duel:</b> when only two players are left, if a player's <b>last card is smaller</b> than the other's they are safe and the game ends. If their <b>last card is bigger</b>, they must pick one of the other player's cards (blind), and play it. This repeats until one player gets rid of their cards.</li>
         <li>Get rid of all your cards to be safe. The last player holding cards is the <b>Bhabhi</b>.</li>
       </ul>
@@ -260,9 +260,9 @@ body.spec #hand,body.spec #actions{display:none}
   <div class="card-panel">
     <h3 style="margin-top:0">Hand-request rule (before you play)</h3>
     <select id="reqMode">
-      <option value="elimination">Elimination &amp; transfer — if the asked player agrees, they hand over all cards and are out</option>
-      <option value="reveal">Reveal only — if the asked player agrees, the requester just sees their hand</option>
-      <option value="off">Off — no hand requests</option>
+      <option value="elimination">Elimination &amp; transfer - if the asked player agrees, they hand over all cards and are out</option>
+      <option value="reveal">Reveal only - if the asked player agrees, the requester just sees their hand</option>
+      <option value="off">Off - no hand requests</option>
     </select>
     <div class="small" id="reqModeRO" style="display:none"></div>
   </div>
@@ -710,7 +710,7 @@ function renderActions(){
   const elim = S.settings.requestMode === 'elimination';
   if (key.startsWith('req')) {
     const d = document.createElement('div'); d.className = 'box';
-    d.innerHTML = `<div class="row"><button class="btn danger" id="reqBtn">🃏 Request ${esc(you.requestTarget)}'s ${elim ? 'cards' : 'hand'}</button></div><div class="small" style="margin-top:6px">Optional — ask before you deal. ${esc(you.requestTarget)} can say no.</div>`;
+    d.innerHTML = `<div class="row"><button class="btn danger" id="reqBtn">🃏 Request ${esc(you.requestTarget)}'s ${elim ? 'cards' : 'hand'}</button></div><div class="small" style="margin-top:6px">Optional - ask before you deal. ${esc(you.requestTarget)} can say no.</div>`;
     box.appendChild(d);
     $('reqBtn').onclick = () => send({t:'request'});
   } else if (key.startsWith('ans')) {
@@ -725,7 +725,7 @@ function renderActions(){
   } else if (key.startsWith('pick')) {
     const from = nameOf(S.pick.fromId);
     const d = document.createElement('div'); d.className = 'box';
-    d.innerHTML = `<div class="msg">⚔ Your last card won! Pick one of ${esc(from)}'s cards — you must play it.</div><div class="backs"></div>`;
+    d.innerHTML = `<div class="msg">⚔ Your last card won! Pick one of ${esc(from)}'s cards - you must play it.</div><div class="backs"></div>`;
     for (let i = 0; i < S.pick.n; i++) {
       const b = cardEl('back'); b.title = 'Pick this card'; b.onclick = () => send({t:'pick', i});
       d.querySelector('.backs').appendChild(b);
@@ -751,7 +751,7 @@ function renderSpec(){
   $('eye').style.display = sp.length ? 'flex' : 'none'; $('eyeN').textContent = sp.length;
   const pop = $('eyePop'); pop.innerHTML = '<b>' + sp.length + (sp.length === 1 ? ' person is' : ' people are') + ' spectating</b>' + sp.map(q => '<div>' + esc(q.name) + (q.id === S.you.id ? ' (you)' : '') + '</div>').join('');
   if (!sp.length) pop.classList.remove('on');
-  $('handLbl').textContent = spec ? '👁 You’re spectating — no cards are shown' : 'Your hand · only you';
+  $('handLbl').textContent = spec ? '👁 You’re spectating - no cards are shown' : 'Your hand · only you';
   const b = $('joinTable'), b2 = $('joinTable2');
   b.style.display = spec && S.phase === 'lobby' ? '' : 'none';
   if (spec && S.phase === 'lobby') { b.disabled = j !== 'now'; b.textContent = j === 'now' ? 'Take a seat' : 'Table full (' + S.players.length + '/8)'; }
@@ -786,19 +786,19 @@ function renderLobby(){
 function statusText(){
   const you = S.you, myTurn = S.turn === you.id;
   if (S.phase === 'over') return 'Game over';
-  if (isSpec()) return S.settle ? S.settle.text : (S.turn ? '👁 Spectating — ' + esc(nameOf(S.turn)) + ' is playing…' : '👁 Spectating');
+  if (isSpec()) return S.settle ? S.settle.text : (S.turn ? '👁 Spectating - ' + esc(nameOf(S.turn)) + ' is playing…' : '👁 Spectating');
   if (S.settle) return S.settle.text;
   if (S.stage === 'consent') {
-    if (you.mustAnswer) return `🃏 ${esc(nameOf(S.consent.pid))} is asking for your ${S.settings.requestMode === 'elimination' ? 'cards' : 'hand'} — your call`;
+    if (you.mustAnswer) return `🃏 ${esc(nameOf(S.consent.pid))} is asking for your ${S.settings.requestMode === 'elimination' ? 'cards' : 'hand'} - your call`;
     if (S.consent.pid === you.id) return `Waiting for ${esc(nameOf(S.consent.targetId))} to answer…`;
     return `${esc(nameOf(S.consent.pid))} asked ${esc(nameOf(S.consent.targetId))} for their hand…`;
   }
   if (S.stage === 'pick') return you.mustPick ? `⚔ Pick a card from ${esc(nameOf(S.pick.fromId))}` : `⚔ ${esc(nameOf(S.pick.pid))} is picking a card from ${esc(nameOf(S.pick.fromId))}…`;
   if (myTurn) {
-    if (you.canRequest) return `🎯 Your turn — request ${esc(you.requestTarget)}'s hand first, or deal a card`;
-    if (!S.plays.length) return '🎯 Your turn — lead any card';
-    if (you.hand.some(c => c.slice(-1)===S.leadSuit)) return `🎯 Your turn — follow ${SYM[S.leadSuit]}`;
-    if (S.firstTrick) return `🎯 No ${SYM[S.leadSuit]} — play any card lower than 10`;
+    if (you.canRequest) return `🎯 Your turn - request ${esc(you.requestTarget)}'s hand first, or deal a card`;
+    if (!S.plays.length) return '🎯 Your turn - lead any card';
+    if (you.hand.some(c => c.slice(-1)===S.leadSuit)) return `🎯 Your turn - follow ${SYM[S.leadSuit]}`;
+    if (S.firstTrick) return `🎯 No ${SYM[S.leadSuit]} - play any card lower than 10`;
     return `⚠️ No ${SYM[S.leadSuit]}! Any card you play is a THULLA`;
   }
   return `Waiting for ${esc(nameOf(S.turn))}…` + (S.firstTrick ? ' (first round: no Thulla)' : '');
@@ -826,7 +826,7 @@ function renderGame(){
   const rv = $('reveal');
   if (you.reveal) {
     rv.style.display = 'block';
-    rv.innerHTML = `<b>${esc(you.reveal.name)}'s hand</b> (only you can see this — as it was when you looked)<div class="cards"></div>`;
+    rv.innerHTML = `<b>${esc(you.reveal.name)}'s hand</b> (only you can see this - as it was when you looked)<div class="cards"></div>`;
     you.reveal.hand.forEach(c => rv.querySelector('.cards').appendChild(cardEl(c)));
   } else rv.style.display = 'none';
   // hand
@@ -839,16 +839,16 @@ function renderGame(){
   });
   if (!isSpec() && !you.hand.length && S.phase !== 'over' && S.stage !== 'pick') {
     const me = S.players.find(p => p.id === you.id);
-    hand.innerHTML = '<div class="small">' + (me && me.out ? '✔ You are out — safe! Watch the others fight it out.' : 'Your last card is on the table — fingers crossed!') + '</div>';
+    hand.innerHTML = '<div class="small">' + (me && me.out ? '✔ You are out - safe! Watch the others fight it out.' : 'Your last card is on the table - fingers crossed!') + '</div>';
   }
   // game over (let the last trick finish its sweep first)
   clearTimeout(overTimer);
   if (S.phase === 'over') {
     const loser = S.players.find(p => p.id === S.loserId);
-    $('overTitle').textContent = loser ? (loser.id===you.id && !isSpec() ? '😅 You are the Bhabhi!' : `🎴 ${loser.name} is the Bhabhi!`) : 'Draw — no Bhabhi!';
+    $('overTitle').textContent = loser ? (loser.id===you.id && !isSpec() ? '😅 You are the Bhabhi!' : `🎴 ${loser.name} is the Bhabhi!`) : 'Draw - no Bhabhi!';
     const ol = $('overList'); ol.innerHTML = '';
     S.players.filter(p => p.place).sort((a,b) => a.place-b.place).forEach(p => { const li = document.createElement('li'); li.textContent = p.name + (p.id===you.id?' (you)':''); ol.appendChild(li); });
-    if (loser) { const li = document.createElement('li'); li.textContent = loser.name + ' — Bhabhi 🎴'; li.style.color='#ffb4b4'; ol.appendChild(li); }
+    if (loser) { const li = document.createElement('li'); li.textContent = loser.name + ' - Bhabhi 🎴'; li.style.color='#ffb4b4'; ol.appendChild(li); }
     const host = S.hostId === you.id && !isSpec();
     $('again').style.display = host ? '' : 'none';
     $('againWait').textContent = host ? '' : 'Waiting for the host to start a new game…';
