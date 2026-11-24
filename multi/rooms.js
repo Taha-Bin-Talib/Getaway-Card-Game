@@ -214,6 +214,7 @@ function handle(ws, m) {
       if (live.length !== room.players.length) return err(ws, 'Wait for everyone to be online.');
       if (room.players.length < e.min) return err(ws, `${e.name} needs at least ${e.min} players.`);
       if (room.players.length > e.max) return err(ws, `${e.name} allows up to ${e.max} players.`);
+      for (let i = room.players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [room.players[i], room.players[j]] = [room.players[j], room.players[i]]; }   // new random seating every game
       e.start(room);
       return broadcast(room);
     }
