@@ -6,7 +6,7 @@
 // they may ADD more, which starts the passing round again, or PASS. Only when they pass too (N-1 passes + their own)
 // is the pile thrown away and they open a new round.
 // A called play is revealed: if it was a lie the player who played it picks up the pile, otherwise the caller does.
-// The one who picks up the pile opens the next round. A player who empties their hand without being caught is SAFE
+// Whoever picked up the pile, the CALLER opens the next round. A player who empties their hand without being caught is SAFE
 // (out of the game); play goes on until only one player still holds cards — that player loses.
 const crypto = require('crypto');
 const { later, setEvent, num } = require('../net');
@@ -156,7 +156,7 @@ function call(room, caller) {
     g.pile = []; g.reveal = null;
     markOut(room, adder);                                  // told the truth with their last cards: safe
     if (checkEnd(room)) return;
-    setOpen(room, loser);
+    setOpen(room, caller.hand.length ? caller : nextAfter(room, caller, null));   // the caller opens, whoever picked up the pile
   });
 }
 
