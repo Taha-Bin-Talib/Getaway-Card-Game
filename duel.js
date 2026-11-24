@@ -84,8 +84,23 @@ function solve(hands, leader, pick = false, budget = 12000) {
     }
     forced[D] = win;
   }
+  // "no possibility of human error": D may still be saved if the OTHER player blunders. D can escape when some
+  // line of play (both players free to choose) ends with D not the Bhabhi, whatever the blind picks turn out to be.
+  const escape = D => {
+    const ok = new Set();
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const [k, n] of nodes) {
+        if (ok.has(k)) continue;
+        const kids = edges.get(k), isOk = ([, kk, m]) => m.k === 'T' ? m.v !== D : ok.has(kk);
+        if (n.k === 'P' ? kids.every(isOk) : kids.some(isOk)) { ok.add(k); changed = true; }
+      }
+    }
+    return ok;
+  };
   const rk = key(root);
-  const doomed = forced[0].has(rk) ? 0 : forced[1].has(rk) ? 1 : null;
+  let doomed = forced[0].has(rk) ? 0 : forced[1].has(rk) ? 1 : null;
+  if (doomed !== null && escape(doomed).has(rk)) doomed = null;
   return { mask, doomed, forced, nodes, edges, root };
 }
 module.exports = { solve, succ, key, owner, A, B, DRAW };

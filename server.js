@@ -103,6 +103,7 @@ function later(room, ms, fn) {
 function startGame(room) {
   clearTimeout(room.timer); room.timer = null; room.gen++;
   room.phase = 'playing'; room.stage = 'turn';
+  for (let i = room.players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [room.players[i], room.players[j]] = [room.players[j], room.players[i]]; }   // new random seating every game
   room.loserId = null; room.discarded = 0; room.trickNo = 0; room.outCounter = 0;
   room.consent = null; room.pick = null; room.settle = null; room.lastTrick = null; room.fxSeq = 0; room.duelSeen = false; room.forfeit = null;
   room.players.forEach(p => { p.hand = []; p.out = false; p.place = 0; p.reveal = null; p.requestedThisTurn = false; });
